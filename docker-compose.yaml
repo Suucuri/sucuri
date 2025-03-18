@@ -1,0 +1,12 @@
+version: '3.1'
+
+services:
+  suucuri:
+    build: .
+    command: python3 -m wsgi --port=8595
+    restart: always
+    environment:
+      - VIRTUAL_HOST=pyno.alite.selfip.org
+      - VIRTUAL_PORT=8595
+    ports:
+      - "8595:8595"

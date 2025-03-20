@@ -140,7 +140,7 @@ settings = {
 application = tornado.web.Application([
     (r'/ws', SocketHandler),
     # (r'/index', DirectoryHandler, {'path': './'})
-    (r'/(.*)', DirectoryHandler, {'path': './'})
+    (r'/(.*)', DirectoryHandler, {'path': './src'})
 ], **settings)
 
 if __name__ == "__main__":

@@ -29,7 +29,7 @@ from tornado import websocket
 from tornado.ioloop import IOLoop
 from tornado.options import define, options
 from tornado.escape import xhtml_escape
-
+root = os.path.dirname(__file__)
 # config options
 define('port', default=8585, type=int, help='port to run web server on')
 define('debug', default=True, help='start app in debug mode')
@@ -71,6 +71,15 @@ class SocketHandler(websocket.WebSocketHandler):
     def write_all(self, msg):
         print("WebSocket write all", cl, msg)
         [receiver.write_message(msg) for receiver in cl if receiver is not self]
+
+
+class MainHandler(tornado.web.RequestHandler):
+    def get(self):
+        try:
+            with open(os.path.join(root, 'src/index.html')) as f:
+                self.write(f.read())
+        except IOError as e:
+            self.write("404: Not Found")
 
 
 class DirectoryHandler(tornado.web.StaticFileHandler):
@@ -140,7 +149,10 @@ settings = {
 application = tornado.web.Application([
     (r'/ws', SocketHandler),
     # (r'/index', DirectoryHandler, {'path': './'})
+    (r'/', MainHandler),
+    # (r'/(.*).jpg', DirectoryHandler, {'path': './src/_media'}),
     (r'/(.*)', DirectoryHandler, {'path': './src'})
+
 ], **settings)
 
 if __name__ == "__main__":

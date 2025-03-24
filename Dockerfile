@@ -1,6 +1,7 @@
+#FROM python:3.12.9-slim-bookworm
 FROM python:3.12.2-slim-bullseye
 LABEL labase.author="carlo@ufrj.br"
-LABEL version="25.05"
+LABEL version="25.03"
 LABEL description="Suucuri - Learn Python with games"
 COPY ./requirements.txt /etc
 RUN python3 -m pip install --upgrade pip
@@ -14,7 +15,9 @@ ADD . /var/www/suucuri
 # 👆
 RUN adduser --system labuser
 USER labuser
+EXPOSE 8009
 
 WORKDIR /var/www/suucuri
 #ENTRYPOINT ["top", "-b"]
-ENTRYPOINT ["python", "wsgi.py", "--port=8595", "--debug=True"]
+ENTRYPOINT ["python3", "wsgi.py", "--port=8575", "--debug=True"]
+#CMD ["python3", "wsgi.py", "--port=8575", "--debug=True"]

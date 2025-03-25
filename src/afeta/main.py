@@ -135,7 +135,7 @@ class Body:
               "cmc": "columns is-multiline is-centered has-text-centered", "crd": "card",
               "bbt": "buttons has-addons is-centered mx-3 px-3", "par": "title is-5 mt-2",
               "go": "fas fa-circle fa-2x", "gat": "tag is-info is-medium", "not": "tag is-dark is-medium",
-              "d": "button is-danger is-larger is-fullwidth is-dark",
+              "d": "button is-danger is-larger is-fullwidth is-dark", "cvs": "current_version is-size-7 has-text-grey-dark",
               "bom": "notification", "bmp": "box has-text-centered"}
 
         def pgr(val, mx, pct):
@@ -196,7 +196,8 @@ class Body:
         buttons = c(d, c(d, self.but, "clv"), "box")
         panels = c(d, c(d, panel(), "clv"), "box")
         aposta = c(d, c(d, aposta(), "cl1"), "box")
-        bd = c(s, c(d, [gallery, buttons, panels, aposta], "cnt"), s)
+        version = c(p,"Version - ", "cvs")
+        bd = c(s, c(d, [gallery, buttons, panels, aposta, version], "cnt"), s)
         _ = self.body <= bd
 
 

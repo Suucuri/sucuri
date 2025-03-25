@@ -1,0 +1,273 @@
+.script-container {
+  width: 100%;
+  /*height: 200px;*/
+  /*background: aqua;*/
+  /*margin: auto;*/
+}
+
+.script-editor {
+  width: 50%;
+  /*height: 200px;*/
+  float: left;
+}
+
+.script-title {
+  text-decoration: underline;
+  padding-bottom: 5px;
+}
+
+.script-button {
+  margin-bottom: 20px;
+  height: 20px;
+}
+
+.script-button .on {
+    margin-bottom: 20px;
+    height: 20px;
+    color: hotpink;
+}
+
+.script-result {
+  padding-left: 5px;
+  overflow: scroll;
+  border: 1px solid #e1e4e5;
+  font: 12px/normal 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+  /*height: 200px;*/
+  /*background: black;*/
+}
+
+.script-editor-long {
+  width: 100%;
+}
+
+.ace_active-line {
+  position:absolute;
+  background:rgba(100,200,100,0.5);
+  z-index:20;
+  border: 1px solid #e1e4e5;
+}
+
+.app-container {
+  width: 100%;
+  vertical-align: top;
+  display: -webkit-flex; /_ Safari _/
+  display: flex;
+  -webkit-flex-direction: row; /_ Safari _/
+  flex-direction:         row;
+  align-items: flex-start;
+}
+
+.script-result-long {
+  width: 100%;
+  overflow: scroll;
+  border: 1px solid #e1e4e5;
+  font: 12px/normal 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+}
+
+.editor-container {
+  width: 50%;
+  vertical-align: top;
+  display: -webkit-flex; /_ Safari _/
+  display: flex;
+  -webkit-flex-direction: column; /_ Safari _/
+  flex-direction:         column;
+  align-items: flex-start;
+}
+
+.diagram-container {
+  width: 50%;
+  vertical-align: top;
+}
+
+.diagram-panel {
+  width: 100%;
+  display: -webkit-inline-flex; /_ Safari _/
+  display: inline-flex;
+}
+
+.diagram-menu {
+  vertical-align: top;
+  width: 100%;
+  display: -webkit-flex; /_ Safari _/
+  display: flex;
+  -webkit-flex-direction: column; /_ Safari _/
+  flex-direction:         column;
+  padding-left: 5px;
+  border: 1px solid #e1e4e5;
+  font: 12px/normal 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+}
+
+.diagram-variables {
+  width: 100%;
+  display: -webkit-flex; /_ Safari _/
+  display: flex;
+  -webkit-flex-direction: column; /_ Safari _/
+  flex-direction:         column;
+}
+
+th.variable-name {
+  width: 30%;
+  padding-bottom: 20px;
+}
+
+th.variable-value {
+  width: 70%;
+  padding-bottom: 20px;
+  padding-left: 20px;
+}
+
+td.label { text-align: right; }
+td.value { text-align: left; }
+
+.buttons-row {
+  display: -webkit-flex; /_ Safari _/
+  display: flex;
+  -webkit-flex-direction: row; /_ Safari _/
+  flex-direction:         row;
+  align-items: flex-start;
+}
+
+.diagram-button {
+  margin-bottom: 20px;
+  width: 150px;
+  height: 20px;
+}
+
+/*
+ * CSS hacks and small modification for my Sphinx website
+ * :copyright: Copyright 2013-2016 Lilian Besson
+ * :license: GPLv3, see LICENSE for details.
+ */
+
+
+/* Colors and text decoration.
+ For example, :black:`text in black` or :blink:`text blinking` in rST. */
+
+.black {
+    color: black;
+}
+
+.gray {
+    color: gray;
+}
+
+.grey {
+    color: gray;
+}
+
+.silver {
+    color: silver;
+}
+
+.white {
+    color: white;
+}
+
+.maroon {
+    color: maroon;
+}
+
+.red {
+    color: red;
+}
+
+.magenta {
+    color: magenta;
+}
+
+.fuchsia {
+    color: fuchsia;
+}
+
+.pink {
+    color: pink;
+}
+
+.orange {
+    color: orange;
+}
+
+.yellow {
+    color: yellow;
+}
+
+.lime {
+    color: lime;
+}
+
+.green {
+    color: green;
+}
+
+.olive {
+    color: olive;
+}
+
+.teal {
+    color: teal;
+}
+
+.cyan {
+    color: cyan;
+}
+
+.aqua {
+    color: aqua;
+}
+
+.blue {
+    color: blue;
+}
+
+.navy {
+    color: navy;
+}
+
+.purple {
+    color: purple;
+}
+
+.under {
+    text-decoration: underline;
+}
+
+.over {
+    text-decoration: overline;
+}
+
+.blink {
+    text-decoration: blink;
+}
+
+.line {
+    text-decoration: line-through;
+}
+
+.strike {
+    text-decoration: line-through;
+}
+
+.it {
+    font-style: italic;
+}
+
+.ob {
+    font-style: oblique;
+}
+
+.small {
+    font-size: small;
+}
+
+.large {
+    font-size: large;
+}
+
+.smallpar {
+    font-size: small;
+}
+
+.ace_editor {word-spacing: 0 !important;}
+
+span.current_version::after {content: "Murine 🐁 25.03a";}
+

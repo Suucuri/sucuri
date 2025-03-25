@@ -3,10 +3,10 @@ version: '3.1'
 services:
   suucuri:
     build: .
-    command: python3 -m wsgi --port=8595
+    command: python3 -m wsgi --port=8575
     restart: always
     environment:
-      - VIRTUAL_HOST=pyno.alite.selfip.org
-      - VIRTUAL_PORT=8595
+      - VIRTUAL_HOST=horacio.nce.ufrj.br
+      - VIRTUAL_PORT=8575
     ports:
-      - "8595:8595"
+      - "8575:8575"

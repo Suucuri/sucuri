@@ -29,9 +29,12 @@ class Body:
     """Dynamic Web Document Builder for Body"""
 
     def __init__(self):
+        self.seleciona = None
         self._current_element = None
+        self._fotos_selecionadas = {}
 
         def no_op(*_args):
+            print("no_op", _args)
             pass
 
         class Activate:
@@ -64,12 +67,19 @@ class Body:
         self.render()
         # self.build()
 
+    def __handle_emotions(self, foto, emotion):
+        self._handle_emotions(foto, emotion)
+
+    def adicionar(self, foto, sentiu):
+        _span = self._fotos_selecionadas[foto]
+        _span.text = _span.text + " " + sentiu
+
     def betting_handler(self, chip):
         print("handle bet chips", chip, self.b_fotos)
         buttons = [button.childNodes[0].classList for button in self.but]
         [button.add("is-dark") for button in buttons]
         [button.go() for button in self.b_fotos]
-        self._handle_emotions()
+        self._handle_emotions(None, None)
         [sct.stop() for sct in self.b_but]
 
     def emotion_handler(self, emotion):
@@ -78,7 +88,8 @@ class Body:
         buttons = [button.childNodes[0].classList for button in self.but]
         [button.add("is-dark") for button in buttons if "is-danger" in button]
         [button.go() for button in self.b_fotos]
-        self._handle_emotions()
+        foto_elemento = self._fotos_selecionadas[self._current_element]
+        self.__handle_emotions(foto_elemento, emotion)
         [sct.stop() for sct in self.b_but]
 
     def foto_handler(self, foto, el):
@@ -99,7 +110,7 @@ class Body:
             uu = f'<span class="has-text-warning-light is-size-4">{chr(CI + b)}</span>'
             return f'{dd}&nbsp;‖&nbsp;{uu}'
 
-        self.emo, abet, self._fotos, self.chosen = self.control.play()
+        self.emo, abet, self._fotos, self.chosen, self._handle_emotions = self.control.play()
         # self.emo, self.chosen = list(range(48*2)), []
         # shuffle(self.emo)
         # self.st = "Amor Raiva Tristeza Alegria Surpresa Medo".split()
@@ -118,6 +129,8 @@ class Body:
         dw, dh = calc(FX, FY)
         bp = f"{dw:.2f}% {dh:.2f}%"
         e = html.DIV(style=dict(width="270px", height="200px", backgroundImage=AFETO, overflow="hidden"))
+        "Criar um cálculo para que este div se adapte ao tamanho da tela"
+        # e = html.DIV(style=dict(width="100%", height="100%", backgroundImage=AFETO, overflow="hidden"))
         e.style.backgroundSize = f"{FX * 100}% {FY * 100}%"
         e.style.backgroundPosition = bp
         return e
@@ -157,9 +170,14 @@ class Body:
                 for n, _e in self.chosen]
 
         def cols():
+            def register(n_foto, ft):
+                span = c(html.P, n_foto, "par")
+                self._fotos_selecionadas[ft] = span
+                return span
             b_fotos = [
-                c(d, [c(f, self.sprite(foto), f), c(html.P, n, "par")],
-                  "bmp", handle=self.act(lambda el, em=foto: self.foto_handler(em, el), self.b_fotos))
+                c(d, [c(f, ft:=self.sprite(foto), f), register(n, ft)],
+                  # "bmp", handle=self.act(lambda el, em=ft: self.foto_handler(em, el), self.b_fotos))
+                  "bmp", handle=self.act(lambda el: self.foto_handler(ft, el), self.b_fotos))
                 for n, foto in enumerate(self._fotos)]  # for n in range(8)]
             return [c(d, foto, "col") for n, foto in enumerate(b_fotos)]  # for n in range(8)]
 

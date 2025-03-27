@@ -28,10 +28,20 @@ class Control:
     def __init__(self, gui, capacidade=2):
         self._chosen = self._round = self._fotos = self._emo = None
         self._todas = list(range(48 * 2))
+        self._foto_selecionada = {}
         # emo = self
         self.capacidade, self.gui = capacidade, gui
         self._sentir = "Amor Raiva Tristeza Alegria Surpresa Medo".split()
+        self._sentir_selecionado = list()
         self._msg = {}
+
+    def selecionou(self, foto, sentiu):
+        print("selecionou", foto, sentiu)
+        self._sentir_selecionado.append(sentiu)
+        self._foto_selecionada[foto] = sentiu
+        self.gui.adicionar(foto, sentiu)
+        if len(self._sentir_selecionado) == 2:
+            self.gui.faz_apostas(choice(self._sentir_selecionado))
     
     def play(self):
         """Inicia o jogo da afetividade."""
@@ -42,7 +52,7 @@ class Control:
         bet = [(a, b) for a in range(1, 7) for b in range(1, 5) if a >= b]
         self._emo = sample(self._sentir, 4)
         self._chosen = [(0, choice(EMO[cs])) if cs in self._emo else (1, cs) for cs in self._sentir]
-        return self._todas, bet, self._fotos, self._chosen
+        return self._todas, bet, self._fotos, self._chosen, self.selecionou
 
 
 EMO = {'Raiva': ['Fúria', 'Ódio', 'Ressentimento', 'Indignação', 'Hostilidade'],

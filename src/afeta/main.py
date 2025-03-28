@@ -18,11 +18,19 @@ Changelog
 |   **SPDX-License-Identifier:** `GNU General Public License v3.0 or later <https://is.gd/3Udt>`_.
 |   `Labase <https://labase.github.io/>`_ - `NCE <https://portal.nce.ufrj.br>`_ - `UFRJ <https://ufrj.br/>`_.
 """
+from collections import namedtuple
+
 from browser import document, html
 from controle import Control
 
 # FX, FY, AFETO = 12, 8, "url(../_media/afetou.jpg)"
 CI, FX, FY, AFETO = 10101, 12, 8, "url(_media/afetou.jpg)"
+Z = namedtuple("Z", "d s f b i p e")(
+    html.DIV, html.SECTION, html.FIGURE, html.BUTTON, html.IMG, html.SPAN, html.I)
+
+
+def no_op(*_args):
+    pass
 
 
 class Body:
@@ -30,9 +38,53 @@ class Body:
 
     def __init__(self):
         self._current_element = None
+        y = self
 
-        def no_op(*_args):
-            pass
+        class Sentir:
+            def __init__(self):
+                self._sentiu = None
+                self._actor = None
+                # self._build = self._builder()
+
+            def _builder(self, n, _e):
+                c, b, d, self._sentiu = y.c, Z.b, Z.d, _e
+                self._actor = c(b, _e, b if n else "d", handle=y.act(
+                    lambda *_, em=_e: y.emotion_handler(em) if not n else None, y.b_but, False))
+                node = c(d, self._actor, "cmn")
+                return node
+
+            def activate(self):
+                self._actor.classList.remove("is-dark") if "is-danger" in self._actor.classList else None
+
+            def restore(self):
+                self._actor.classList.add("is-dark") if "is-danger" in self._actor.classList else None
+
+            @classmethod
+            def build(cls):
+                return [cls()._builder(n, _e) for n, _e in y.chosen]
+
+        class Foto(Sentir):
+
+            def _builder(self, n, foto):
+                c, b, d, f, self._sentiu = y.c, Z.b, Z.d, Z.f, foto
+                self._actor = c(d, [c(f, y.sprite(foto), f), c(html.P, n, "par")],
+                                "bmp", handle=y.act(lambda el, em=foto: y.foto_handler(em, el), y.b_fotos))
+                node = c(d, self._actor, "cmn")
+                return node
+
+            def activate(self):
+                self._actor.classList.add("has-background-grey")
+
+            def restore(self):
+                self._actor.classList.remove("has-background-grey")
+
+            @classmethod
+            def build(cls):
+                c, b, d, f = y.c, Z.b, Z.d, Z.f
+                b_fotos = [cls()._builder(n, foto)
+
+                           for n, foto in enumerate(self._fotos)]  # for n in range(8)]
+                return [c(d, foto, "col") for n, foto in enumerate(b_fotos)]  # for n in range(8)]
 
         class Activate:
             """Activate"""
@@ -55,6 +107,7 @@ class Body:
                 # [sct.stop() for sct in self.target]
 
         self.body = document.body
+        self.part = namedtuple("Part", "foto, sentir")(Foto, Sentir)
         self.act = Activate
         self._handle_emotions = self._handle_foto = no_op
         self.control = Control(self)
@@ -122,9 +175,8 @@ class Body:
         e.style.backgroundPosition = bp
         return e
 
-    def render(self):
+    def c(self, elt, cnt, clazz, handle=None):
         d, s, f, b, i, p, e = html.DIV, html.SECTION, html.FIGURE, html.BUTTON, html.IMG, html.SPAN, html.I
-        # st = self.st
         CL = {s: "section", f: "figure", b: "button is-primary is-larger is-fullwidth is-dark", "col": "column is-3",
               "cls": "columns is-multiline is-variable is-2 mb-8", "cnt": "container", "box": "box",
               "bxc": "box has-text-centered", "clv": "columns is-variable is-2", "cmn": "column",
@@ -135,20 +187,26 @@ class Body:
               "cmc": "columns is-multiline is-centered has-text-centered", "crd": "card",
               "bbt": "buttons has-addons is-centered mx-3 px-3", "par": "title is-5 mt-2",
               "go": "fas fa-circle fa-2x", "gat": "tag is-info is-medium", "not": "tag is-dark is-medium",
-              "d": "button is-danger is-larger is-fullwidth is-dark", "cvs": "current_version is-size-7 has-text-grey-dark",
+              "d": "button is-danger is-larger is-fullwidth is-dark",
+              "cvs": "current_version is-size-7 has-text-grey-dark",
               "bom": "notification", "bmp": "box has-text-centered"}
+        _elt = elt(cnt, Class=CL[clazz])
+        _elt.bind("click", lambda *_, _e=_elt: handle(_e)) if handle is not None else None
+        return _elt
+
+    def render(self):
+        c = self.c
+        d, s, f, b, i, p, e = html.DIV, html.SECTION, html.FIGURE, html.BUTTON, html.IMG, html.SPAN, html.I
+
+        # st = self.st
 
         def pgr(val, mx, pct):
             return html.PROGRESS(pct, Class="progress is-large is-info", value=val, max=mx)
 
-        def c(elt, cnt, clazz, handle=None):
-            _elt = elt(cnt, Class=CL[clazz])
-            _elt.bind("click", lambda *_, _e=_elt: handle(_e)) if handle is not None else None
-            return _elt
-            # img = i(src="https://picsum.photos/seed/picsum/600/400?random=1", alt="pic0")
-            # return img if elt == i else elt(cnt, Class=CL[clazz])
-
         def button():
+            return self.part.sentir.build()
+
+        def _button():
             return [
                 c(d, c(
                     b, _e, b if n else "d",
@@ -157,6 +215,9 @@ class Body:
                 for n, _e in self.chosen]
 
         def cols():
+            return self.part.foto.build()
+
+        def _cols():
             b_fotos = [
                 c(d, [c(f, self.sprite(foto), f), c(html.P, n, "par")],
                   "bmp", handle=self.act(lambda el, em=foto: self.foto_handler(em, el), self.b_fotos))
@@ -175,7 +236,7 @@ class Body:
                 # clue = c(d, [c(b, nm, "btt") for nm in range(9)], "bad")
                 chips = [c(d, c(d, c(b, bt, "btt"), "crd"), "cn2") for bt in self.bet]
                 # bet = c(d, c(d, chips, "bbt"), "box")
-                bet = c(d, [c(d, c(b, f"Sentimento Escolhido: {self.chosen[2][1]}", b), "cmn")]+chips, "bbt")
+                bet = c(d, [c(d, c(b, f"Sentimento Escolhido: {self.chosen[2][1]}", b), "cmn")] + chips, "bbt")
                 return bet
 
             return clue_bet()  # c(d, clue_bet(), "cmn")
@@ -196,7 +257,7 @@ class Body:
         buttons = c(d, c(d, self.but, "clv"), "box")
         panels = c(d, c(d, panel(), "clv"), "box")
         aposta = c(d, c(d, aposta(), "cl1"), "box")
-        version = c(p,"Version - ", "cvs")
+        version = c(p, "Version - ", "cvs")
         bd = c(s, c(d, [gallery, buttons, panels, aposta, version], "cnt"), s)
         _ = self.body <= bd
 

@@ -27,6 +27,7 @@ from controle import Control
 CI, FX, FY, AFETO = 10101, 12, 8, "url(_media/afetou.jpg)"
 Z = namedtuple("Z", "d s f b i p e")(
     html.DIV, html.SECTION, html.FIGURE, html.BUTTON, html.IMG, html.SPAN, html.I)
+COMP = namedtuple("Comp", ["build", "comps"])
 
 
 def no_op(*_args):
@@ -38,53 +39,86 @@ class Body:
 
     def __init__(self):
         self._current_element = None
+        self._sentires, self.fotos, self._fichas = [list()] * 3
         y = self
 
         class Sentir:
             def __init__(self):
                 self._sentiu = None
                 self._actor = None
-                # self._build = self._builder()
+                self._build = None
+                self._action = None
+
+            def _act(self, n, _e, _handler, go=False):
+                self._action = y.act(
+                    lambda *_, em=_e: _handler(em, self) if not n else None, y.b_but, go)
+                return self._action
 
             def _builder(self, n, _e):
                 c, b, d, self._sentiu = y.c, Z.b, Z.d, _e
-                self._actor = c(b, _e, b if n else "d", handle=y.act(
-                    lambda *_, em=_e: y.emotion_handler(em) if not n else None, y.b_but, False))
+                self._actor = c(b, _e, b if n else "d", handle=self._act(n, _e, y.emotion_handler))  # .act(
                 node = c(d, self._actor, "cmn")
                 return node
 
             def activate(self):
                 self._actor.classList.remove("is-dark") if "is-danger" in self._actor.classList else None
+                self._action.go()
 
             def restore(self):
                 self._actor.classList.add("is-dark") if "is-danger" in self._actor.classList else None
+                self._action.stop()
+
+            @classmethod
+            def restore_all(cls):
+                [comp.restore() for comp in y._componentes[cls].build]
 
             @classmethod
             def build(cls):
-                return [cls()._builder(n, _e) for n, _e in y.chosen]
+                def _builder(n, _e):
+                    _cls = cls()
+                    y._componentes[cls].build.append(_cls)
+                    return _cls._builder(n, _e)
+                return [_builder(n, _e) for n, _e in y.chosen]
 
         class Foto(Sentir):
 
             def _builder(self, n, foto):
                 c, b, d, f, self._sentiu = y.c, Z.b, Z.d, Z.f, foto
                 self._actor = c(d, [c(f, y.sprite(foto), f), c(html.P, n, "par")],
-                                "bmp", handle=y.act(lambda el, em=foto: y.foto_handler(em, el), y.b_fotos))
+                                # "bmp", handle=y.act(lambda el, em=foto: y.foto_handler(em, el), y.b_fotos)) **CNG**
+                                # "bmp", handle=y.act(lambda el, em=foto: y.foto_handler(em, self), y.b_fotos))
+                                "bmp", handle=self._act(n, foto, y.foto_handler, True))
+                # self._act(n, foto, y.foto_handler)
                 node = c(d, self._actor, "cmn")
+                self.restore()
                 return node
 
             def activate(self):
+                print(self._sentiu, self._action)
                 self._actor.classList.add("has-background-grey")
+                self._action.stop()
 
             def restore(self):
+                print(self._sentiu, self._action)
                 self._actor.classList.remove("has-background-grey")
+                self._action.go()
+            #
+            # def build_(cls):
+            #     c, b, d, f = y.c, Z.b, Z.d, Z.f
+            #     b_fotos = [cls()._builder(n, foto)
+            #                for n, foto in enumerate(y._fotos)]
+            #     return [c(d, foto, "col") for n, foto in enumerate(b_fotos)]
 
             @classmethod
             def build(cls):
                 c, b, d, f = y.c, Z.b, Z.d, Z.f
-                b_fotos = [cls()._builder(n, foto)
 
-                           for n, foto in enumerate(self._fotos)]  # for n in range(8)]
-                return [c(d, foto, "col") for n, foto in enumerate(b_fotos)]  # for n in range(8)]
+                def _builder(n, _e):
+                    _cls = cls()
+                    y._componentes[cls].build.append(_cls)
+                    return _cls._builder(n, _e)
+                b_fotos = [_builder(n, foto) for n, foto in enumerate(y._fotos)]
+                return [c(d, foto, "col") for n, foto in enumerate(b_fotos)]
 
         class Activate:
             """Activate"""
@@ -102,11 +136,11 @@ class Body:
                 self.handle = no_op
 
             def __call__(self, arg):
-                print("Activate", self.target)
+                print("Activate", self.handle, arg)
                 self.handle(arg)
                 # [sct.stop() for sct in self.target]
-
         self.body = document.body
+        self._componentes = {k: COMP(list(), list()) for k in [Sentir, Foto]}
         self.part = namedtuple("Part", "foto, sentir")(Foto, Sentir)
         self.act = Activate
         self._handle_emotions = self._handle_foto = no_op
@@ -125,25 +159,31 @@ class Body:
         self._handle_emotions()
         [sct.stop() for sct in self.b_but]
 
-    def emotion_handler(self, emotion):
-        print("handle emotion", emotion, self.b_fotos)
-        self._current_element.classList.remove("has-background-grey")
-        buttons = [button.childNodes[0].classList for button in self.but]
-        [button.add("is-dark") for button in buttons if "is-danger" in button]
-        [button.go() for button in self.b_fotos]
-        self._handle_emotions()
-        [sct.stop() for sct in self.b_but]
+    def emotion_handler(self, emotion, _):
+        # self._current_element.classList.remove("has-background-grey")
+        # self._current_element.restore()
+        # buttons = [button.childNodes[0].classList for button in self.but]
+        as_fotos, os_sentires = [self._componentes[pr].build for pr in (self.part.foto, self.part.sentir)]
+        print("handle emotion", emotion, as_fotos, self._current_element)
+        [button.restore() for button in as_fotos]
+        [button.restore() for button in os_sentires]
+        # [button.add("is-dark") for button in buttons if "is-danger" in button]
+        # [button.go() for button in self.b_fotos]
+        # self._handle_emotions()
+        # [sct.stop() for sct in self.b_but]
 
     def foto_handler(self, foto, el):
-        el.classList.add("has-background-grey")
+        # el.classList.add("has-background-grey")
+        el.activate()
         self._current_element = el
-        buttons = [button.childNodes[0].classList for button in self.but]
-        print("handle foto", foto, [cl for cl in buttons[0]])
-        [button.remove("is-dark") for button in buttons if "is-danger" in button]
-        print(self.b_but)
-        [button.go() for button in self.b_but]
-        self._handle_foto()
-        [sct.stop() for sct in self.b_fotos]
+        # buttons = [button.childNodes[0].classList for button in self.but]
+        [button.activate() for button in self._componentes[self.part.sentir].build]
+        print("handle foto", foto, self._componentes[self.part.foto].build)  # , [cl for cl in buttons[0]]
+        # [button.remove("is-dark") for button in buttons if "is-danger" in button]
+        # print(self.b_but)
+        # [button.go() for button in self.b_but]
+        # self._handle_foto()
+        # [sct.stop() for sct in self.b_fotos]
 
     def setup(self):
         def bet(a, b):
@@ -176,7 +216,8 @@ class Body:
         return e
 
     def c(self, elt, cnt, clazz, handle=None):
-        d, s, f, b, i, p, e = html.DIV, html.SECTION, html.FIGURE, html.BUTTON, html.IMG, html.SPAN, html.I
+        _ = self
+        d, s, f, b, i, p, e = Z.d, Z.s, Z.f, Z.b, Z.i, Z.p, Z.e
         CL = {s: "section", f: "figure", b: "button is-primary is-larger is-fullwidth is-dark", "col": "column is-3",
               "cls": "columns is-multiline is-variable is-2 mb-8", "cnt": "container", "box": "box",
               "bxc": "box has-text-centered", "clv": "columns is-variable is-2", "cmn": "column",
@@ -196,7 +237,8 @@ class Body:
 
     def render(self):
         c = self.c
-        d, s, f, b, i, p, e = html.DIV, html.SECTION, html.FIGURE, html.BUTTON, html.IMG, html.SPAN, html.I
+        # d, s, f, b, i, p, e = html.DIV, html.SECTION, html.FIGURE, html.BUTTON, html.IMG, html.SPAN, html.I
+        d, s, f, b, i, p, e = Z.d, Z.s, Z.f, Z.b, Z.i, Z.p, Z.e
 
         # st = self.st
 
@@ -205,24 +247,24 @@ class Body:
 
         def button():
             return self.part.sentir.build()
-
-        def _button():
-            return [
-                c(d, c(
-                    b, _e, b if n else "d",
-                    handle=self.act(lambda *_, em=_e: self.emotion_handler(em) if not n else None,
-                                    self.b_but, False)), "cmn")
-                for n, _e in self.chosen]
+        #
+        # def _button():
+        #     return [
+        #         c(d, c(
+        #             b, _e, b if n else "d",
+        #             handle=self.act(lambda *_, em=_e: self.emotion_handler(em, 0) if not n else None,
+        #                             self.b_but, False)), "cmn")
+        #         for n, _e in self.chosen]
 
         def cols():
             return self.part.foto.build()
 
-        def _cols():
-            b_fotos = [
-                c(d, [c(f, self.sprite(foto), f), c(html.P, n, "par")],
-                  "bmp", handle=self.act(lambda el, em=foto: self.foto_handler(em, el), self.b_fotos))
-                for n, foto in enumerate(self._fotos)]  # for n in range(8)]
-            return [c(d, foto, "col") for n, foto in enumerate(b_fotos)]  # for n in range(8)]
+        # def _cols():
+        #     b_fotos = [
+        #         c(d, [c(f, self.sprite(foto), f), c(html.P, n, "par")],
+        #           "bmp", handle=self.act(lambda el, em=foto: self.foto_handler(em, el), self.b_fotos))
+        #         for n, foto in enumerate(self._fotos)]  # for n in range(8)]
+        #     return [c(d, foto, "col") for n, foto in enumerate(b_fotos)]  # for n in range(8)]
 
         def panel():
             pre = c(d, c(p, "♻", "not"), "cmn")

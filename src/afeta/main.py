@@ -20,6 +20,7 @@ Changelog
 |   `Labase <https://labase.github.io/>`_ - `NCE <https://portal.nce.ufrj.br>`_ - `UFRJ <https://ufrj.br/>`_.
 """
 from collections import namedtuple
+from random import choice
 
 from browser import document, html
 from controle import Control
@@ -36,7 +37,7 @@ def no_op(*_args):
 
 class Parte:
     def __init__(self):
-        self._name = self._actor = self._build = self._action = self._text = self._tag = None
+        self._nome = self._actor = self._action = self._text = self._tag = None
 
     @property
     def text(self):
@@ -45,7 +46,8 @@ class Parte:
     @text.setter
     def text(self, text):
         self._text += f", {text}"
-        self._tag.innerHTML = self._text
+        if self._tag is not None:
+            self._tag.innerHTML = self._text
 
 
 class Body:
@@ -58,23 +60,21 @@ class Body:
         y = self
 
         class Sentir(Parte):
-            # def __init_(self):
-            #     self._name = self._actor = self._build = self._action = self._text = None
-
-            def _act(self, n, _e, _handler, go=False):
-                self._action = Activate(_handler, _e if not n else None, target=self, go=go)
+            def _act(self, _, _e, _handler, go=False):
+                self._action = Activate(_handler, _e, target=self, go=go)
                 return self._action
 
             def _builder(self, n, _e):
-                c, b, d, self._name = y.c, Z.b, Z.d, _e
+                c, b, d, self._nome = y.c, Z.b, Z.d, _e
                 self._text = str(n)
-                self._actor = c(b, _e, b if n else "d", handle=self._act(n, _e, y.emotion_handler))  # .act(
+                self._actor = c(b, _e, b if n else "d", handle=self._act(n, _e, y.emotion_handler))
                 node = c(d, self._actor, "cmn")
                 return node
 
             def activate(self):
-                self._actor.classList.remove("is-dark") if "is-danger" in self._actor.classList else None
-                self._action.go()
+                if "is-danger" in self._actor.classList:
+                    self._actor.classList.remove("is-dark")
+                    self._action.go()
 
             def restore(self):
                 self._actor.classList.add("is-dark") if "is-danger" in self._actor.classList else None
@@ -129,16 +129,25 @@ class Body:
         class Ficha(Sentir):
 
             def _builder(self, n, _e):
-                c, b, d, self._name = y.c, Z.b, Z.d, _e
-                self._actor = c(b, _e, "btt", handle=self._act(n, _e, y.betting_handler))  # .act(
+
+                def make_bet(bk, fd):
+                    """Create bet chip with loosing and gaining points"""
+                    dd = f'<span class="has-text-info-light is-size-4">{chr(CI + bk)}</span>'
+                    uu = f'<span class="has-text-warning-light is-size-4">{chr(CI + fd)}</span>'
+                    return f'{dd}&nbsp;‖&nbsp;{uu}'
+
+                self._text = str(n)
+                c, b, d, self._nome, self._tag = y.c, Z.b, Z.d, _e, n
+                self._actor = c(b, make_bet(*_e), "btt", handle=self._act(n, _e, y.betting_handler))  # .act(
                 node = c(d, self._actor, "crd")
                 return node
 
             @classmethod
             def build(cls):
                 c, b, d = y.c, Z.b, Z.d
-                chips = [c(d, cls._build(0, bt), "cn2") for bt in y.bet]
-                bet = c(d, [c(d, c(b, f"Sentimento Escolhido: {y.chosen[2][1]}", b), "cmn")] + chips, "bbt")
+                tag = c(b, "Nada ainda", b)
+                chips = [c(d, cls._build(tag, bt), "cn2") for bt in y.bet]
+                bet = c(d, [c(d, tag, "cmn")] + chips, "bbt")
                 return bet
 
         class Activate:
@@ -160,27 +169,43 @@ class Body:
                 # print("Activate", self.handle, arg)
                 self.handle(arg)
         self.body = document.body
-        self._componentes = {k: COMP(list(), list()) for k in [Sentir, Foto, Ficha]}
         self.part = namedtuple("Part", "foto, sentir, ficha")(Foto, Sentir, Ficha)
+        self._current_part = self.part.sentir
+        self._tips = []
+        self._componentes = {k: COMP(list(), list()) for k in [Sentir, Foto, Ficha]}
         self._handle_emotions = self._handle_foto = no_op
         self._handle_emotions = self.do_handle
         self.control = Control(self)
         self.emo, self.chosen, self.bet, self._fotos, self.but = [list()] * 5
-        self.b_fotos, self.b_but = list(), list()
         self.setup()
         self.render()
 
     def do_handle(self, texto, tip, origin: Parte):
+        self._tips.append(texto)
         assert isinstance(origin, Parte), type(origin)
-        print(origin, tip, texto, type(tip), type(origin.text))
+        tips = self._componentes[self.part.ficha].build[0]
+        print("do_handle", origin, tip, texto, tips, tips.text)
         origin.text = texto
+        if len(self._tips) >= 2:
+            if self._current_part == self.part.ficha:
+                self.part.sentir.restore_all()
+                self.part.ficha.restore_all()
+                self.part.foto.activate_all()
+                return
+            sen = f"Sentimento: {choice(self._tips)}"
+            self._tips = []
+            self._componentes[self.part.ficha].build[0].text = sen
+            # self._handle_foto = self.do_foto
+            self.part.sentir.restore_all()
+            self.part.foto.restore_all()
+            self._current_part = self.part.ficha
 
     def betting_handler(self, chip, foto):
-        self._current_element = foto
         print("handle bet chips", chip, foto)
         self.part.foto.restore_all()
-        self.part.sentir.restore_all()
+        self.part.ficha.restore_all()
         self._handle_emotions(chip, foto, self._current_element)
+        self._current_element = foto
 
     def emotion_handler(self, emotion, sentir):
         print("handle emotion", emotion, self._current_element)
@@ -192,18 +217,13 @@ class Body:
     def foto_handler(self, foto, el):
         el.activate()
         self._current_element = el
-        self.part.sentir.activate_all()
+        self._current_part.activate_all()
         print("handle foto", foto, self._current_element, self._componentes[self.part.foto].build)
+        self._handle_foto(foto, el, self._current_element)
 
     def setup(self):
-        def bet(a, b):
-            """Create bet chip with loosing and gaining points"""
-            dd = f'<span class="has-text-info-light is-size-4">{chr(CI + a)}</span>'
-            uu = f'<span class="has-text-warning-light is-size-4">{chr(CI + b)}</span>'
-            return f'{dd}&nbsp;‖&nbsp;{uu}'
-
         self.emo, abet, self._fotos, self.chosen = self.control.play()
-        self.bet = [bet(a, b) for a, b in abet]
+        self.bet = [(a, b) for a, b in abet]
 
     def sprite(self, foto=None):
         """Near layer should be more spaced"""
@@ -263,14 +283,6 @@ class Body:
         def aposta():
             return self.part.ficha.build()
 
-        def __aposta():
-            def clue_bet():
-                chips = [c(d, c(d, c(b, bt, "btt"), "crd"), "cn2") for bt in self.bet]
-                bet = c(d, [c(d, c(b, f"Sentimento Escolhido: {self.chosen[2][1]}", b), "cmn")] + chips, "bbt")
-                return bet
-
-            return clue_bet()  # c(d, clue_bet(), "cmn")
-
         deco = "꧁∙·▫ₒₒ▫ᵒᴼᵒ▫ₒₒ▫꧁ AGUARDE ꧂▫ₒₒ▫ᵒᴼᵒ▫ₒₒ▫·∙꧂"
         br = html.BR
         note_t, note_b = [html.P(deco + deco, Class="tag is-primary") for _ in "ab"]
@@ -279,8 +291,7 @@ class Body:
                      pgr(30, 100, 30)], "bom")
         note.style.position = "absolute"
         gallery = c(d, c(d, cols(), "cls"), "box")
-        self.but = button()
-        buttons = c(d, c(d, self.but, "clv"), "box")
+        buttons = c(d, c(d, button(), "clv"), "box")
         panels = c(d, c(d, panel(), "clv"), "box")
         aposta = c(d, c(d, aposta(), "cl1"), "box")
         version = c(p, "Version - ", "cvs")

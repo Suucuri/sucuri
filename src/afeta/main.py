@@ -12,6 +12,7 @@ Changelog
 .. versionadded::    25.03
    |br| Initial server implementation (07).
    |br| Improve bet chips (23).
+   |br| Refactor ops into Foto, Sentir & Ficha (28).
 
 |   **Open Source Notification:** This file is part of open source program **Suucurijuba**
 |   **Copyright © 2024  Carlo Oliveira** <carlo@nce.ufrj.br>,
@@ -23,7 +24,6 @@ from collections import namedtuple
 from browser import document, html
 from controle import Control
 
-# FX, FY, AFETO = 12, 8, "url(../_media/afetou.jpg)"
 CI, FX, FY, AFETO = 10101, 12, 8, "url(_media/afetou.jpg)"
 Z = namedtuple("Z", "d s f b i p e")(
     html.DIV, html.SECTION, html.FIGURE, html.BUTTON, html.IMG, html.SPAN, html.I)
@@ -34,28 +34,40 @@ def no_op(*_args):
     pass
 
 
+class Parte:
+    def __init__(self):
+        self._name = self._actor = self._build = self._action = self._text = self._tag = None
+
+    @property
+    def text(self):
+        return self._text
+
+    @text.setter
+    def text(self, text):
+        self._text += f", {text}"
+        self._tag.innerHTML = self._text
+
+
 class Body:
     """Dynamic Web Document Builder for Body"""
+    FT = None
 
     def __init__(self):
         self._current_element = None
         self._sentires, self.fotos, self._fichas = [list()] * 3
         y = self
 
-        class Sentir:
-            def __init__(self):
-                self._sentiu = None
-                self._actor = None
-                self._build = None
-                self._action = None
+        class Sentir(Parte):
+            # def __init_(self):
+            #     self._name = self._actor = self._build = self._action = self._text = None
 
             def _act(self, n, _e, _handler, go=False):
-                self._action = y.act(
-                    lambda *_, em=_e: _handler(em, self) if not n else None, y.b_but, go)
+                self._action = Activate(_handler, _e if not n else None, target=self, go=go)
                 return self._action
 
             def _builder(self, n, _e):
-                c, b, d, self._sentiu = y.c, Z.b, Z.d, _e
+                c, b, d, self._name = y.c, Z.b, Z.d, _e
+                self._text = str(n)
                 self._actor = c(b, _e, b if n else "d", handle=self._act(n, _e, y.emotion_handler))  # .act(
                 node = c(d, self._actor, "cmn")
                 return node
@@ -69,65 +81,74 @@ class Body:
                 self._action.stop()
 
             @classmethod
+            def _build(cls, n, _e):
+                _cls = cls()
+                y._componentes[cls].build.append(_cls)
+                return _cls._builder(n, _e)
+
+            @classmethod
             def restore_all(cls):
                 [comp.restore() for comp in y._componentes[cls].build]
 
             @classmethod
+            def activate_all(cls):
+                [comp.activate() for comp in y._componentes[cls].build]
+
+            @classmethod
             def build(cls):
-                def _builder(n, _e):
-                    _cls = cls()
-                    y._componentes[cls].build.append(_cls)
-                    return _cls._builder(n, _e)
-                return [_builder(n, _e) for n, _e in y.chosen]
+                return [cls._build(n, _e) for n, _e in y.chosen]
 
         class Foto(Sentir):
 
             def _builder(self, n, foto):
                 c, b, d, f, self._sentiu = y.c, Z.b, Z.d, Z.f, foto
-                self._actor = c(d, [c(f, y.sprite(foto), f), c(html.P, n, "par")],
-                                # "bmp", handle=y.act(lambda el, em=foto: y.foto_handler(em, el), y.b_fotos)) **CNG**
-                                # "bmp", handle=y.act(lambda el, em=foto: y.foto_handler(em, self), y.b_fotos))
+                self._text = str(n)
+                self._tag = c(html.P, n, "par")
+                self._actor = c(d, [c(f, y.sprite(foto), f), self._tag],
                                 "bmp", handle=self._act(n, foto, y.foto_handler, True))
-                # self._act(n, foto, y.foto_handler)
                 node = c(d, self._actor, "cmn")
                 self.restore()
                 return node
 
             def activate(self):
-                print(self._sentiu, self._action)
+                # print(self._sentiu, self._action)
                 self._actor.classList.add("has-background-grey")
                 self._action.stop()
 
             def restore(self):
-                print(self._sentiu, self._action)
+                # print(self._sentiu, self._action)
                 self._actor.classList.remove("has-background-grey")
                 self._action.go()
-            #
-            # def build_(cls):
-            #     c, b, d, f = y.c, Z.b, Z.d, Z.f
-            #     b_fotos = [cls()._builder(n, foto)
-            #                for n, foto in enumerate(y._fotos)]
-            #     return [c(d, foto, "col") for n, foto in enumerate(b_fotos)]
 
             @classmethod
             def build(cls):
                 c, b, d, f = y.c, Z.b, Z.d, Z.f
-
-                def _builder(n, _e):
-                    _cls = cls()
-                    y._componentes[cls].build.append(_cls)
-                    return _cls._builder(n, _e)
-                b_fotos = [_builder(n, foto) for n, foto in enumerate(y._fotos)]
+                b_fotos = [cls._build(n, foto) for n, foto in enumerate(y._fotos)]
                 return [c(d, foto, "col") for n, foto in enumerate(b_fotos)]
+
+        class Ficha(Sentir):
+
+            def _builder(self, n, _e):
+                c, b, d, self._name = y.c, Z.b, Z.d, _e
+                self._actor = c(b, _e, "btt", handle=self._act(n, _e, y.betting_handler))  # .act(
+                node = c(d, self._actor, "crd")
+                return node
+
+            @classmethod
+            def build(cls):
+                c, b, d = y.c, Z.b, Z.d
+                chips = [c(d, cls._build(0, bt), "cn2") for bt in y.bet]
+                bet = c(d, [c(d, c(b, f"Sentimento Escolhido: {y.chosen[2][1]}", b), "cmn")] + chips, "bbt")
+                return bet
 
         class Activate:
             """Activate"""
 
-            def __init__(self, handler, target, go=True):
-                target.append(self) if self not in target else None
-                self.target = target
-                self.handler = handler
-                self.handle = handler if go else no_op
+            def __init__(self, handler, element, target, go=True):
+                def event_handler(*_args, **_kwargs):
+                    return handler(element, target)
+                self.handler = event_handler
+                self.handle = self.handler if go else no_op
 
             def go(self):
                 self.handle = self.handler
@@ -136,54 +157,43 @@ class Body:
                 self.handle = no_op
 
             def __call__(self, arg):
-                print("Activate", self.handle, arg)
+                # print("Activate", self.handle, arg)
                 self.handle(arg)
-                # [sct.stop() for sct in self.target]
         self.body = document.body
-        self._componentes = {k: COMP(list(), list()) for k in [Sentir, Foto]}
-        self.part = namedtuple("Part", "foto, sentir")(Foto, Sentir)
-        self.act = Activate
+        self._componentes = {k: COMP(list(), list()) for k in [Sentir, Foto, Ficha]}
+        self.part = namedtuple("Part", "foto, sentir, ficha")(Foto, Sentir, Ficha)
         self._handle_emotions = self._handle_foto = no_op
+        self._handle_emotions = self.do_handle
         self.control = Control(self)
-        self.emo, self.chosen, self.st, self.bet, self._fotos, self.but = [list()] * 6
+        self.emo, self.chosen, self.bet, self._fotos, self.but = [list()] * 5
         self.b_fotos, self.b_but = list(), list()
         self.setup()
         self.render()
-        # self.build()
 
-    def betting_handler(self, chip):
-        print("handle bet chips", chip, self.b_fotos)
-        buttons = [button.childNodes[0].classList for button in self.but]
-        [button.add("is-dark") for button in buttons]
-        [button.go() for button in self.b_fotos]
-        self._handle_emotions()
-        [sct.stop() for sct in self.b_but]
+    def do_handle(self, texto, tip, origin: Parte):
+        assert isinstance(origin, Parte), type(origin)
+        print(origin, tip, texto, type(tip), type(origin.text))
+        origin.text = texto
 
-    def emotion_handler(self, emotion, _):
-        # self._current_element.classList.remove("has-background-grey")
-        # self._current_element.restore()
-        # buttons = [button.childNodes[0].classList for button in self.but]
-        as_fotos, os_sentires = [self._componentes[pr].build for pr in (self.part.foto, self.part.sentir)]
-        print("handle emotion", emotion, as_fotos, self._current_element)
-        [button.restore() for button in as_fotos]
-        [button.restore() for button in os_sentires]
-        # [button.add("is-dark") for button in buttons if "is-danger" in button]
-        # [button.go() for button in self.b_fotos]
-        # self._handle_emotions()
-        # [sct.stop() for sct in self.b_but]
+    def betting_handler(self, chip, foto):
+        self._current_element = foto
+        print("handle bet chips", chip, foto)
+        self.part.foto.restore_all()
+        self.part.sentir.restore_all()
+        self._handle_emotions(chip, foto, self._current_element)
+
+    def emotion_handler(self, emotion, sentir):
+        print("handle emotion", emotion, self._current_element)
+        self.part.foto.restore_all()
+        self.part.sentir.restore_all()
+        self._handle_emotions(emotion, sentir, self._current_element)
+        self._current_element = sentir
 
     def foto_handler(self, foto, el):
-        # el.classList.add("has-background-grey")
         el.activate()
         self._current_element = el
-        # buttons = [button.childNodes[0].classList for button in self.but]
-        [button.activate() for button in self._componentes[self.part.sentir].build]
-        print("handle foto", foto, self._componentes[self.part.foto].build)  # , [cl for cl in buttons[0]]
-        # [button.remove("is-dark") for button in buttons if "is-danger" in button]
-        # print(self.b_but)
-        # [button.go() for button in self.b_but]
-        # self._handle_foto()
-        # [sct.stop() for sct in self.b_fotos]
+        self.part.sentir.activate_all()
+        print("handle foto", foto, self._current_element, self._componentes[self.part.foto].build)
 
     def setup(self):
         def bet(a, b):
@@ -193,12 +203,7 @@ class Body:
             return f'{dd}&nbsp;‖&nbsp;{uu}'
 
         self.emo, abet, self._fotos, self.chosen = self.control.play()
-        # self.emo, self.chosen = list(range(48*2)), []
-        # shuffle(self.emo)
-        # self.st = "Amor Raiva Tristeza Alegria Surpresa Medo".split()
         self.bet = [bet(a, b) for a, b in abet]
-        # emo = sample(self.st, 4)
-        # self.chosen = [(0, choice(EMO[cs])) if cs in emo else (1, cs) for cs in self.st]
 
     def sprite(self, foto=None):
         """Near layer should be more spaced"""
@@ -208,7 +213,7 @@ class Body:
             conta_, lado_ = x - 1 if x > 1 else 1, y - 1 if y > 1 else 1
             return (100 / conta_) * (item % x), (100 / lado_) * (item // x)
 
-        dw, dh = calc(FX, FY)
+        dw, dh,  = calc(FX, FY)
         bp = f"{dw:.2f}% {dh:.2f}%"
         e = html.DIV(style=dict(width="270px", height="200px", backgroundImage=AFETO, overflow="hidden"))
         e.style.backgroundSize = f"{FX * 100}% {FY * 100}%"
@@ -221,7 +226,7 @@ class Body:
         CL = {s: "section", f: "figure", b: "button is-primary is-larger is-fullwidth is-dark", "col": "column is-3",
               "cls": "columns is-multiline is-variable is-2 mb-8", "cnt": "container", "box": "box",
               "bxc": "box has-text-centered", "clv": "columns is-variable is-2", "cmn": "column",
-              e: "fas fa-recycle fa-2x", "tag": "tag is-warning is-medium", "btt": "button",
+              e: "fas fa-recycle fa-2x", "tag": "tag is-warning is-medium", "btt": "button is-danger is-dark",
               "bin": "button is-danger is-large is-fullwidth mb-3", "bad": "buttons has-addons is-centered mb-3",
               "bts": "button is-small is-fullwidth", "cl1": "columns", "cl2": "columns is-2",
               "cmm": "columns is-multiline is-mobile", "st": "fas fa-star fa-2x", "cn2": "column is-1",
@@ -237,34 +242,16 @@ class Body:
 
     def render(self):
         c = self.c
-        # d, s, f, b, i, p, e = html.DIV, html.SECTION, html.FIGURE, html.BUTTON, html.IMG, html.SPAN, html.I
         d, s, f, b, i, p, e = Z.d, Z.s, Z.f, Z.b, Z.i, Z.p, Z.e
-
-        # st = self.st
 
         def pgr(val, mx, pct):
             return html.PROGRESS(pct, Class="progress is-large is-info", value=val, max=mx)
 
         def button():
             return self.part.sentir.build()
-        #
-        # def _button():
-        #     return [
-        #         c(d, c(
-        #             b, _e, b if n else "d",
-        #             handle=self.act(lambda *_, em=_e: self.emotion_handler(em, 0) if not n else None,
-        #                             self.b_but, False)), "cmn")
-        #         for n, _e in self.chosen]
 
         def cols():
             return self.part.foto.build()
-
-        # def _cols():
-        #     b_fotos = [
-        #         c(d, [c(f, self.sprite(foto), f), c(html.P, n, "par")],
-        #           "bmp", handle=self.act(lambda el, em=foto: self.foto_handler(em, el), self.b_fotos))
-        #         for n, foto in enumerate(self._fotos)]  # for n in range(8)]
-        #     return [c(d, foto, "col") for n, foto in enumerate(b_fotos)]  # for n in range(8)]
 
         def panel():
             pre = c(d, c(p, "♻", "not"), "cmn")
@@ -274,17 +261,15 @@ class Body:
             return track
 
         def aposta():
+            return self.part.ficha.build()
+
+        def __aposta():
             def clue_bet():
-                # clue = c(d, [c(b, nm, "btt") for nm in range(9)], "bad")
                 chips = [c(d, c(d, c(b, bt, "btt"), "crd"), "cn2") for bt in self.bet]
-                # bet = c(d, c(d, chips, "bbt"), "box")
                 bet = c(d, [c(d, c(b, f"Sentimento Escolhido: {self.chosen[2][1]}", b), "cmn")] + chips, "bbt")
                 return bet
 
             return clue_bet()  # c(d, clue_bet(), "cmn")
-            #
-            # return [c(d, [c(b, f"foto de {h}", "bin"), *clue_bet()], "cmn")
-            #         for h in st[:2]]
 
         deco = "꧁∙·▫ₒₒ▫ᵒᴼᵒ▫ₒₒ▫꧁ AGUARDE ꧂▫ₒₒ▫ᵒᴼᵒ▫ₒₒ▫·∙꧂"
         br = html.BR
@@ -293,7 +278,6 @@ class Body:
         note = c(d, [c(d, [note_t, br(), note_text, html.IMG(src="_media/loading.gif"), br(), note_b], "par"),
                      pgr(30, 100, 30)], "bom")
         note.style.position = "absolute"
-        # gallery = c(d, c(d, [note]+cols(), "cls"), "box")
         gallery = c(d, c(d, cols(), "cls"), "box")
         self.but = button()
         buttons = c(d, c(d, self.but, "clv"), "box")

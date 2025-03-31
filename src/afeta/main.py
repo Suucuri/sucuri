@@ -3,16 +3,14 @@
 """Dynamic Web Document Builder.
 
 Classes neste módulo:
-    - :py:class:`Body` build document body.
+    - :py:class:`Hub` communication hub.
 
 .. codeauthor:: Carlo Oliveira <carlo@nce.ufrj.br>
 
 Changelog
 ---------
 .. versionadded::    25.03
-   |br| Initial server implementation (07).
-   |br| Improve bet chips (23).
-   |br| Refactor ops into Foto, Sentir & Ficha (28).
+   |br| Initial server implementation (30).
 
 |   **Open Source Notification:** This file is part of open source program **Suucurijuba**
 |   **Copyright © 2024  Carlo Oliveira** <carlo@nce.ufrj.br>,
@@ -20,283 +18,127 @@ Changelog
 |   `Labase <https://labase.github.io/>`_ - `NCE <https://portal.nce.ufrj.br>`_ - `UFRJ <https://ufrj.br/>`_.
 """
 from collections import namedtuple
-from random import choice
 
-from browser import document, html
-from controle import Control
+from browser import timer, worker, window, websocket
+from browser.widgets.dialog import InfoDialog
 
-CI, FX, FY, AFETO = 10101, 12, 8, "url(_media/afetou.jpg)"
-Z = namedtuple("Z", "d s f b i p e")(
-    html.DIV, html.SECTION, html.FIGURE, html.BUTTON, html.IMG, html.SPAN, html.I)
-COMP = namedtuple("Comp", ["build", "comps"])
+HOST = window.location.host
+print(str(HOST))
 
 
-def no_op(*_args):
-    pass
+class Combo:
+    COMBO = namedtuple("Combo", ["hub", "view", "control", "work", "db"])
+
+    def __init__(self, proxy=None):
+        self.proxy = proxy
+        self._publisher = {}
+        self._subscriber = {}
+        self._combo = self.COMBO
+
+    def execute(self, method_name, *args, **kwargs):
+        resolve = self.__publisher(method_name, *args)
+        # print("execute resolve", resolve)
+        return resolve if resolve else None
+
+    def publish(self, component_name, method_name, method):
+        self._publisher[component_name] = (method_name, method)
+
+    def subscribe(self, component_name, method_name, method):
+        sb, comp_met = self._subscriber, (component_name, method)
+        sb.update({method_name: [comp_met] if method_name not in sb else sb[method_name] + [comp_met]})
+        # self._subscriber.setdefault(method_name, [component_name, method])
+
+    def __publisher(self, method_name, *arguments):
+        if method_name in self._subscriber:
+            x = [method(*arguments) for component_name, method in self._subscriber[method_name]]
+            print("__publisher", x, self._subscriber[method_name])
+            return x[0] if x or x[0] else None
+        else:
+            print("__publisher fail", method_name, self._subscriber)
+            return None
+
+    def application_builder(self):
+        from vista import Body
+        from controle import Control
+
+        class View(Combo):
+            pass
+
+        class Controller(Combo):
+            pass
+
+        class Work(Combo):
+            pass
+
+        class Db(Combo):
+            pass
+
+        self._combo(self, View(Body(self, self)), Controller(Control(self)), Work(), Db())
 
 
-class Parte:
+class Hub(Combo):
+    """General hub for communication exchange."""
+
     def __init__(self):
-        self._nome = self._actor = self._action = self._text = self._tag = None
+        super().__init__()
+        self._hub = None
+        self._handler = {}
+        self._ws = None
+        self.worker_builder()
+        self._open(0)
+        self.application_builder()
+        self.execute("inicio")
 
-    @property
-    def text(self):
-        return self._text
+    def worker_builder(self):
+        def on_message(evt):
+            data = evt.data
+            print("npc", data)
+            self._handler["update_foto"](0, data) if "update_foto" in self._handler else None
+            # self._componentes[self.part.foto].build[0].text = data
 
-    @text.setter
-    def text(self, text):
-        self._text += f", {text}"
-        if self._tag is not None:
-            self._tag.innerHTML = self._text
+        def on_ready(npc):
+            print("npc on_ready", npc)
 
+            def go_npc():
+                npc.send(0)
 
-class Body:
-    """Dynamic Web Document Builder for Body"""
-    FT = None
+            # timer.set_interval(go_npc, 8000)
 
-    def __init__(self):
-        self._current_element = None
-        self._sentires, self.fotos, self._fichas = [list()] * 3
-        y = self
+        worker.create_worker("player", on_ready, on_message)
 
-        class Sentir(Parte):
-            def _act(self, _, _e, _handler, go=False):
-                self._action = Activate(_handler, _e, target=self, go=go)
-                return self._action
+    def register(self, part):
+        self._handler.update(part)
 
-            def _builder(self, n, _e):
-                c, b, d, self._nome = y.c, Z.b, Z.d, _e
-                self._text = str(n)
-                self._actor = c(b, _e, b if n else "d", handle=self._act(n, _e, y.emotion_handler))
-                node = c(d, self._actor, "cmn")
-                return node
+    def on_open(self, evt):
+        InfoDialog("websocket", f"Connection open")
 
-            def activate(self):
-                if "is-danger" in self._actor.classList:
-                    self._actor.classList.remove("is-dark")
-                    self._action.go()
+    def on_message(self, evt):
+        # message received from server
+        InfoDialog("websocket", f"Message received : {evt.data}")
 
-            def restore(self):
-                self._actor.classList.add("is-dark") if "is-danger" in self._actor.classList else None
-                self._action.stop()
+    def on_close(self, evt):
+        # websocket is closed
+        InfoDialog("websocket", "Connection is closed")
 
-            @classmethod
-            def _build(cls, n, _e):
-                _cls = cls()
-                y._componentes[cls].build.append(_cls)
-                return _cls._builder(n, _e)
+    def _open(self, ev):
+        if not websocket.supported:
+            InfoDialog("websocket", "WebSocket is not supported by your browser")
+            return
+        # open a web socket
+        self._ws = websocket.WebSocket(f"http://{HOST}/ws")
+        # self._ws = websocket.WebSocket("http://localhost:8585/ws")
+        # bind functions to web socket events
+        self._ws.bind('open', self.on_open)
+        self._ws.bind('message', self.on_message)
+        self._ws.bind('close', self.on_close)
 
-            @classmethod
-            def restore_all(cls):
-                [comp.restore() for comp in y._componentes[cls].build]
+    def send(self, data):
+        if data:
+            self._ws.send(data)
 
-            @classmethod
-            def activate_all(cls):
-                [comp.activate() for comp in y._componentes[cls].build]
-
-            @classmethod
-            def build(cls):
-                return [cls._build(n, _e) for n, _e in y.chosen]
-
-        class Foto(Sentir):
-
-            def _builder(self, n, foto):
-                c, b, d, f, self._sentiu = y.c, Z.b, Z.d, Z.f, foto
-                self._text = str(n)
-                self._tag = c(html.P, n, "par")
-                self._actor = c(d, [c(f, y.sprite(foto), f), self._tag],
-                                "bmp", handle=self._act(n, foto, y.foto_handler, True))
-                node = c(d, self._actor, "cmn")
-                self.restore()
-                return node
-
-            def activate(self):
-                # print(self._sentiu, self._action)
-                self._actor.classList.add("has-background-grey")
-                self._action.stop()
-
-            def restore(self):
-                # print(self._sentiu, self._action)
-                self._actor.classList.remove("has-background-grey")
-                self._action.go()
-
-            @classmethod
-            def build(cls):
-                c, b, d, f = y.c, Z.b, Z.d, Z.f
-                b_fotos = [cls._build(n, foto) for n, foto in enumerate(y._fotos)]
-                return [c(d, foto, "col") for n, foto in enumerate(b_fotos)]
-
-        class Ficha(Sentir):
-
-            def _builder(self, n, _e):
-
-                def make_bet(bk, fd):
-                    """Create bet chip with loosing and gaining points"""
-                    dd = f'<span class="has-text-info-light is-size-4">{chr(CI + bk)}</span>'
-                    uu = f'<span class="has-text-warning-light is-size-4">{chr(CI + fd)}</span>'
-                    return f'{dd}&nbsp;‖&nbsp;{uu}'
-
-                self._text = str(n)
-                c, b, d, self._nome, self._tag = y.c, Z.b, Z.d, _e, n
-                self._actor = c(b, make_bet(*_e), "btt", handle=self._act(n, _e, y.betting_handler))  # .act(
-                node = c(d, self._actor, "crd")
-                return node
-
-            @classmethod
-            def build(cls):
-                c, b, d = y.c, Z.b, Z.d
-                tag = c(b, "Nada ainda", b)
-                chips = [c(d, cls._build(tag, bt), "cn2") for bt in y.bet]
-                bet = c(d, [c(d, tag, "cmn")] + chips, "bbt")
-                return bet
-
-        class Activate:
-            """Activate"""
-
-            def __init__(self, handler, element, target, go=True):
-                def event_handler(*_args, **_kwargs):
-                    return handler(element, target)
-                self.handler = event_handler
-                self.handle = self.handler if go else no_op
-
-            def go(self):
-                self.handle = self.handler
-
-            def stop(self):
-                self.handle = no_op
-
-            def __call__(self, arg):
-                # print("Activate", self.handle, arg)
-                self.handle(arg)
-        self.body = document.body
-        self.part = namedtuple("Part", "foto, sentir, ficha")(Foto, Sentir, Ficha)
-        self._current_part = self.part.sentir
-        self._tips = []
-        self._componentes = {k: COMP(list(), list()) for k in [Sentir, Foto, Ficha]}
-        self._handle_emotions = self._handle_foto = no_op
-        self._handle_emotions = self.do_handle
-        self.control = Control(self)
-        self.emo, self.chosen, self.bet, self._fotos, self.but = [list()] * 5
-        self.setup()
-        self.render()
-
-    def do_handle(self, texto, tip, origin: Parte):
-        self._tips.append(texto)
-        assert isinstance(origin, Parte), type(origin)
-        tips = self._componentes[self.part.ficha].build[0]
-        print("do_handle", origin, tip, texto, tips, tips.text)
-        origin.text = texto
-        if len(self._tips) >= 2:
-            if self._current_part == self.part.ficha:
-                self.part.sentir.restore_all()
-                self.part.ficha.restore_all()
-                self.part.foto.activate_all()
-                return
-            sen = f"Sentimento: {choice(self._tips)}"
-            self._tips = []
-            self._componentes[self.part.ficha].build[0].text = sen
-            # self._handle_foto = self.do_foto
-            self.part.sentir.restore_all()
-            self.part.foto.restore_all()
-            self._current_part = self.part.ficha
-
-    def betting_handler(self, chip, foto):
-        print("handle bet chips", chip, foto)
-        self.part.foto.restore_all()
-        self.part.ficha.restore_all()
-        self._handle_emotions(chip, foto, self._current_element)
-        self._current_element = foto
-
-    def emotion_handler(self, emotion, sentir):
-        print("handle emotion", emotion, self._current_element)
-        self.part.foto.restore_all()
-        self.part.sentir.restore_all()
-        self._handle_emotions(emotion, sentir, self._current_element)
-        self._current_element = sentir
-
-    def foto_handler(self, foto, el):
-        el.activate()
-        self._current_element = el
-        self._current_part.activate_all()
-        print("handle foto", foto, self._current_element, self._componentes[self.part.foto].build)
-        self._handle_foto(foto, el, self._current_element)
-
-    def setup(self):
-        self.emo, abet, self._fotos, self.chosen = self.control.play()
-        self.bet = [(a, b) for a, b in abet]
-
-    def sprite(self, foto=None):
-        """Near layer should be more spaced"""
-
-        def calc(x, y):
-            item = foto or self.emo.pop()  # randint(0, 48)
-            conta_, lado_ = x - 1 if x > 1 else 1, y - 1 if y > 1 else 1
-            return (100 / conta_) * (item % x), (100 / lado_) * (item // x)
-
-        dw, dh,  = calc(FX, FY)
-        bp = f"{dw:.2f}% {dh:.2f}%"
-        e = html.DIV(style=dict(width="270px", height="200px", backgroundImage=AFETO, overflow="hidden"))
-        e.style.backgroundSize = f"{FX * 100}% {FY * 100}%"
-        e.style.backgroundPosition = bp
-        return e
-
-    def c(self, elt, cnt, clazz, handle=None):
-        _ = self
-        d, s, f, b, i, p, e = Z.d, Z.s, Z.f, Z.b, Z.i, Z.p, Z.e
-        CL = {s: "section", f: "figure", b: "button is-primary is-larger is-fullwidth is-dark", "col": "column is-3",
-              "cls": "columns is-multiline is-variable is-2 mb-8", "cnt": "container", "box": "box",
-              "bxc": "box has-text-centered", "clv": "columns is-variable is-2", "cmn": "column",
-              e: "fas fa-recycle fa-2x", "tag": "tag is-warning is-medium", "btt": "button is-danger is-dark",
-              "bin": "button is-danger is-large is-fullwidth mb-3", "bad": "buttons has-addons is-centered mb-3",
-              "bts": "button is-small is-fullwidth", "cl1": "columns", "cl2": "columns is-2",
-              "cmm": "columns is-multiline is-mobile", "st": "fas fa-star fa-2x", "cn2": "column is-1",
-              "cmc": "columns is-multiline is-centered has-text-centered", "crd": "card",
-              "bbt": "buttons has-addons is-centered mx-3 px-3", "par": "title is-5 mt-2",
-              "go": "fas fa-circle fa-2x", "gat": "tag is-info is-medium", "not": "tag is-dark is-medium",
-              "d": "button is-danger is-larger is-fullwidth is-dark",
-              "cvs": "current_version is-size-7 has-text-grey-dark",
-              "bom": "notification", "bmp": "box has-text-centered"}
-        _elt = elt(cnt, Class=CL[clazz])
-        _elt.bind("click", lambda *_, _e=_elt: handle(_e)) if handle is not None else None
-        return _elt
-
-    def render(self):
-        c = self.c
-        d, s, f, b, i, p, e = Z.d, Z.s, Z.f, Z.b, Z.i, Z.p, Z.e
-
-        def pgr(val, mx, pct):
-            return html.PROGRESS(pct, Class="progress is-large is-info", value=val, max=mx)
-
-        def button():
-            return self.part.sentir.build()
-
-        def cols():
-            return self.part.foto.build()
-
-        def panel():
-            pre = c(d, c(p, "♻", "not"), "cmn")
-            pos = c(d, c(e, "⭐", "not"), "cmn")
-            track = [pre] + [c(d, c(p, abs(h), "tag" if h > 0 else "gat"), "cmn") for h in range(-5, 6)] + [pos]
-            track[6] = c(d, c(e, "🮕", "not"), "cmn")
-            return track
-
-        def aposta():
-            return self.part.ficha.build()
-
-        deco = "꧁∙·▫ₒₒ▫ᵒᴼᵒ▫ₒₒ▫꧁ AGUARDE ꧂▫ₒₒ▫ᵒᴼᵒ▫ₒₒ▫·∙꧂"
-        br = html.BR
-        note_t, note_b = [html.P(deco + deco, Class="tag is-primary") for _ in "ab"]
-        note_text = html.P("Aguarde até que os jogadores confirmem suas participações")
-        note = c(d, [c(d, [note_t, br(), note_text, html.IMG(src="_media/loading.gif"), br(), note_b], "par"),
-                     pgr(30, 100, 30)], "bom")
-        note.style.position = "absolute"
-        gallery = c(d, c(d, cols(), "cls"), "box")
-        buttons = c(d, c(d, button(), "clv"), "box")
-        panels = c(d, c(d, panel(), "clv"), "box")
-        aposta = c(d, c(d, aposta(), "cl1"), "box")
-        version = c(p, "Version - ", "cvs")
-        bd = c(s, c(d, [gallery, buttons, panels, aposta, version], "cnt"), s)
-        _ = self.body <= bd
+    def close_connection(self, ev):
+        self._ws.close()
 
 
-Body()
+# Body(Control, Hub())
+Hub()

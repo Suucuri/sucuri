@@ -20,11 +20,13 @@ Changelog
 |   `Labase <https://labase.github.io/>`_ - `NCE <https://portal.nce.ufrj.br>`_ - `UFRJ <https://ufrj.br/>`_.
 """
 from collections import namedtuple
-from random import choice
+from random import choice, randint
 from browser import document, html
+
 CI, FX, FY, AFETO = 10101, 12, 8, "url(_media/afetou.jpg)"
-Z = namedtuple("Z", "d s f b i p e")(
-    html.DIV, html.SECTION, html.FIGURE, html.BUTTON, html.IMG, html.SPAN, html.I)
+Z = namedtuple("Z", "d s f b i p e h r g t")(
+    html.DIV, html.SECTION, html.FIGURE, html.BUTTON, html.IMG, html.SPAN, html.I,
+    html.HEADER, html.FOOTER, html.P, html.H1)
 COMP = namedtuple("Comp", ["build", "comps"])
 
 
@@ -49,6 +51,14 @@ class Parte:
 
 class Body:
     """Dynamic Web Document Builder for Body"""
+    CLS = {'a': 'modal is-active', 'b': 'modal-background', 'c': 'modal-card-body',
+           'd': 'box has-text-centered vintage-box', 'e': 'vintage-frame', 'f': 'old-photo',
+           'g': 'title is-3 has-text-white waiting-title', 'h': 'subtitle is-5 has-text-light',
+           'i': 'loading-container', 'j': 'loading-spinner', 'k': 'has-text-white', 'l': 'modal-card',
+           'm': 'modal-card-head', 'n': 'modal-card-title', 'o': 'modal-card-foot', 'p': 'modal-close', 'q': 'delete',
+           'r': 'Aguarde os outros Jogadores', 's': 'Analisando fotos',
+           't': 'Revivendo memórias', 'u': 'Analisando emoções nas fotos...', 'v': 'Aguarde a sua vez'
+           }
     FT = None
 
     def __init__(self, hub, *_args, **_kwargs):
@@ -98,6 +108,57 @@ class Body:
             def build(cls):
                 return [cls._build(n, _e) for n, _e in y.chosen]
 
+        class Aguardar(Sentir):
+
+            def _builder(self, n, _e):
+                c, b, d, h, r, s, p, t, z, self._nome = y.c, Z.b, Z.d, Z.h, Z.r, Z.s, Z.g, Z.t, Body.CLS, _e
+                button = html.BUTTON(Class="delete", **{"aria-label": "close"})
+                head = c(h, [c(p, z["r"], "n"), button], "m")
+                im = y.sprite(randint(0, 90))
+                im.width, im.height, im.style.filter = 470, 400, "blur(8px)"
+                sp = [[c(t, z["u"], "h"), c(d, [c(d, "", "j")], "i")], ]
+                section = [c(d, [c(d, im, "e"), sp], "d")]
+                foot = [c(r, html.PROGRESS(0, Class="progress is-large is-info", value=20, max=100), "o")]
+                content = [c(d, "", "b"), c(d, [head, section, foot], "l")]
+                self._actor = node = c(d, content, "a")
+                return node
+
+            @property
+            def text(self):
+                return self._text
+
+            @text.setter
+            def text(self, text):
+                self._text = text
+                if self._tag is not None:
+                    self._tag.value = self._text
+
+            def activate(self):
+                self._actor.classList.add("is-active")
+                self._action.go()
+
+            def restore(self):
+                self._actor.classList.remove("is-active")
+                self._action.stop()
+
+            @classmethod
+            def _build(cls, n, _e):
+                _cls = cls()
+                y._componentes[cls].build.append(_cls)
+                return _cls._builder(n, _e)
+
+            @classmethod
+            def restore_all(cls):
+                [comp.restore() for comp in y._componentes[cls].build]
+
+            @classmethod
+            def activate_all(cls):
+                [comp.activate() for comp in y._componentes[cls].build]
+
+            @classmethod
+            def build(cls):
+                return cls._build(0, 0)
+
         class Foto(Sentir):
 
             def _builder(self, n, foto):
@@ -129,7 +190,6 @@ class Body:
         class Ficha(Sentir):
 
             def _builder(self, n, _e):
-
                 def make_bet(bk, fd):
                     """Create bet chip with loosing and gaining points"""
                     dd = f'<span class="has-text-info-light is-size-4">{chr(CI + bk)}</span>'
@@ -156,6 +216,7 @@ class Body:
             def __init__(self, handler, element, target, go=True):
                 def event_handler(*_args, **_kwargs):
                     return handler(element, target)
+
                 self.handler = event_handler
                 self.handle = self.handler if go else no_op
 
@@ -168,11 +229,12 @@ class Body:
             def __call__(self, arg):
                 # print("Activate", self.handle, arg)
                 self.handle(arg)
+
         self.body = document.body
-        self.part = namedtuple("Part", "foto, sentir, ficha")(Foto, Sentir, Ficha)
+        self.part = namedtuple("Part", "foto, sentir, ficha, aguarda")(Foto, Sentir, Ficha, Aguardar)
         self._current_part = self.part.sentir
         self._tips = []
-        self._componentes = {k: COMP(list(), list()) for k in [Sentir, Foto, Ficha]}
+        self._componentes = {k: COMP(list(), list()) for k in [Sentir, Foto, Ficha, Aguardar]}
         self._handle_emotions = self._handle_foto = no_op
         self._handle_emotions = self.do_handle
         # self.control = Control(self)
@@ -242,7 +304,7 @@ class Body:
             conta_, lado_ = x - 1 if x > 1 else 1, y - 1 if y > 1 else 1
             return (100 / conta_) * (item % x), (100 / lado_) * (item // x)
 
-        dw, dh,  = calc(FX, FY)
+        dw, dh, = calc(FX, FY)
         bp = f"{dw:.2f}% {dh:.2f}%"
         e = html.DIV(style=dict(width="270px", height="200px", backgroundImage=AFETO, overflow="hidden"))
         e.style.backgroundSize = f"{FX * 100}% {FY * 100}%"
@@ -265,6 +327,7 @@ class Body:
               "d": "button is-danger is-larger is-fullwidth is-dark",
               "cvs": "current_version is-size-7 has-text-grey-dark",
               "bom": "notification", "bmp": "box has-text-centered"}
+        CL.update(Body.CLS)
         _elt = elt(cnt, Class=CL[clazz])
         _elt.bind("click", lambda *_, _e=_elt: handle(_e)) if handle is not None else None
         return _elt
@@ -304,7 +367,7 @@ class Body:
         panels = c(d, c(d, panel(), "clv"), "box")
         aposta = c(d, c(d, aposta(), "cl1"), "box")
         version = c(p, "Version - ", "cvs")
-        bd = c(s, c(d, [gallery, buttons, panels, aposta, version], "cnt"), s)
+        bd = [c(s, c(d, [gallery, buttons, panels, aposta, version], "cnt"), s), self.part.aguarda.build()]
         _ = self.body <= bd
 
     def npc(self, *_):

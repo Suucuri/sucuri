@@ -17,30 +17,47 @@ Changelog
 |   **SPDX-License-Identifier:** `GNU General Public License v3.0 or later <https://is.gd/3Udt>`_.
 |   `Labase <https://labase.github.io/>`_ - `NCE <https://portal.nce.ufrj.br>`_ - `UFRJ <https://ufrj.br/>`_.
 """
+import json
 from collections import namedtuple
 
-from browser import timer, worker, window, websocket
+from browser import worker, window, websocket
 from browser.widgets.dialog import InfoDialog
+MA = namedtuple("MA", "m, a")
 
 HOST = window.location.host
 print(str(HOST))
+
+
+class MS:
+    # G = {k: MA(lambda *_: None, None) for k in "error proceed_game".split()}
+    G = {k: lambda *_: None for k in "error proceed_game".split()}
+
+    @classmethod
+    def x(cls, k, *args):
+        # return cls.G[k].m(*args)
+        return cls.G[k](*args)
 
 
 class Combo:
     COMBO = namedtuple("Combo", ["hub", "view", "control", "work", "db"])
 
     def __init__(self, proxy=None):
-        self.proxy = proxy
+        self._proxy = proxy
         self._publisher = {}
         self._subscriber = {}
         self._combo = self.COMBO
 
-    def execute(self, method_name, *args, **kwargs):
+    def __getattr__(self, name):
+        # Forward any unknown attribute/method to the member
+        condition = name.startswith("_") or name in ("subscribe", "execute")
+        return getattr(self, name) if condition else (self._proxy, name)
+
+    def execute(self, method_name, *args, **_):
         resolve = self.__publisher(method_name, *args)
         # print("execute resolve", resolve)
         return resolve if resolve else None
 
-    def publish(self, component_name, method_name, method):
+    def _publish(self, component_name, method_name, method):
         self._publisher[component_name] = (method_name, method)
 
     def subscribe(self, component_name, method_name, method):
@@ -57,7 +74,8 @@ class Combo:
             print("__publisher fail", method_name, self._subscriber)
             return None
 
-    def application_builder(self):
+    def _application_builder(self):
+        combo = self
         from vista import Body
         from controle import Control
 
@@ -68,6 +86,8 @@ class Combo:
             pass
 
         class Work(Combo):
+            def __init__(self):
+                super().__init__()
             pass
 
         class Db(Combo):
@@ -81,26 +101,38 @@ class Hub(Combo):
 
     def __init__(self):
         super().__init__()
-        self._hub = None
+        self._hub = self._worker = None
         self._handler = {}
         self._ws = None
         self.worker_builder()
-        self._open(0)
-        self.application_builder()
+        # self._open(0)
+        self._application_builder()
         self.execute("inicio")
+        # ops = (self.error, self._subscriber["proceed_game"]())
+        ops = (self.error, lambda *a: self.execute("proceed_game", *a))
+        MS.G = {k: op for k, op in zip("error proceed_game".split(), ops)}
+
+    def error(self, msg):
+        InfoDialog("Worker Error", f"Error received : {msg}")
 
     def worker_builder(self):
         def on_message(evt):
             data = evt.data
-            print("npc", data)
-            self._handler["update_foto"](0, data) if "update_foto" in self._handler else None
+            print("worker on message", *data)
+            # ma = MA(*data)
+            # MS.x(ma.m, ma.a)
+            MS.x(*data)
+            # self._handler["update_foto"](0, data) if "update_foto" in self._handler else None
             # self._componentes[self.part.foto].build[0].text = data
 
         def on_ready(npc):
             print("npc on_ready", npc)
-
-            def go_npc():
-                npc.send(0)
+            self._worker = npc
+            npc.send(['recruit_players', 4])
+            # npc.send(json.dumps(['recruit_players', 4]))
+            #
+            # def go_npc():
+            #     npc.send(0)
 
             # timer.set_interval(go_npc, 8000)
 

@@ -319,5 +319,5 @@ td.value { text-align: left; }
 }
 .ace_editor {word-spacing: 0 !important;}
 
-span.current_version::after {content: "Murine 🐁 25.03a";}
+span.current_version::after {content: "Murine 🐁 25.04a";}
 

@@ -77,7 +77,7 @@ class Body:
             def _builder(self, n, _e):
                 c, b, d, self._nome = y.c, Z.b, Z.d, _e
                 self._text = str(n)
-                self._actor = c(b, _e, b if n else "d", handle=self._act(n, _e, y.emotion_handler))
+                self._actor = c(b, _e, b if n else "dk", handle=self._act(n, _e, y.emotion_handler))
                 node = c(d, self._actor, "cmn")
                 return node
 
@@ -324,7 +324,7 @@ class Body:
               "cmc": "columns is-multiline is-centered has-text-centered", "crd": "card",
               "bbt": "buttons has-addons is-centered mx-3 px-3", "par": "title is-5 mt-2",
               "go": "fas fa-circle fa-2x", "gat": "tag is-info is-medium", "not": "tag is-dark is-medium",
-              "d": "button is-danger is-larger is-fullwidth is-dark",
+              "dk": "button is-danger is-larger is-fullwidth is-dark",
               "cvs": "current_version is-size-7 has-text-grey-dark",
               "bom": "notification", "bmp": "box has-text-centered"}
         CL.update(Body.CLS)
@@ -367,7 +367,7 @@ class Body:
         panels = c(d, c(d, panel(), "clv"), "box")
         aposta = c(d, c(d, aposta(), "cl1"), "box")
         version = c(p, "Version - ", "cvs")
-        bd = [c(s, c(d, [gallery, buttons, panels, aposta, version], "cnt"), s), self.part.aguarda.build()]
+        bd = [c(s, c(d, [gallery, buttons, panels, aposta, version], "cnt"), s)]  # , self.part.aguarda.build()]
         _ = self.body <= bd
 
     def npc(self, *_):

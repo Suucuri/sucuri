@@ -54,7 +54,7 @@ class Player:
         if self.acknowledged_players >= self.player_count:
             boss.send(["proceed_game"])
         else:
-            timer.set_timeout(self.acknowledged, 4000)
+            timer.set_timeout(self.acknowledged, 1000)
         # return self.acknowledged_players
 
     def do_count(self):

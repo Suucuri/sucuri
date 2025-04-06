@@ -48,6 +48,16 @@ class Parte:
         if self._tag is not None:
             self._tag.innerHTML = self._text
 
+    def _handle_part(self):
+        self.activate_any()
+        self._current_element = self
+        # self._current_part.activate_all()
+        # print("handle foto", foto, self._current_element, self._componentes[self.part.foto].build)
+        # self._handle_foto(foto, el, self._current_element)
+
+    def activate_any(self):
+        pass
+
 
 class Body:
     """Dynamic Web Document Builder for Body"""
@@ -62,17 +72,31 @@ class Body:
     FT = None
 
     def __init__(self, hub, *_args, **_kwargs):
-        self._current_element = None
+        self.hub = hub
+        self._current_element = self._tips = self._current_part = None
         self._hub = hub
-        # self._controller = controller
         self._sentires, self.fotos, self._fichas = [list()] * 3
-        y = self
         hub.subscribe(self.__class__.__name__, "inicio", self.inicio)
+        self.body = document.body
+        self._handle_emotions = self._handle_foto = no_op
+        self._handle_emotions = self.do_handle
+        self.emo, self.chosen, self.bet, self._fotos, self.but = [list()] * 5
+        self._build_parts()
+        # hub.register(dict(update_foto=self._update_foto))
+        hub.subscribe(self.__class__.__name__, "new_player", self.part.aguarda.new_player)
+        hub.subscribe(self.__class__.__name__, "proceed_game", self.part.aguarda.restore)
+
+        # self.go()
+    def _build_parts(self):
+        y = self
 
         class Sentir(Parte):
             def _act(self, _, _e, _handler, go=False):
                 self._action = Activate(_handler, _e, target=self, go=go)
                 return self._action
+
+            def _handler(self, evt):
+                y._current_handler(evt, self.__class__.__name__, self._text)
 
             def _builder(self, n, _e):
                 c, b, d, self._nome = y.c, Z.b, Z.d, _e
@@ -128,13 +152,17 @@ class Body:
                 return node
 
             @property
+            def actor(self):
+                return self._actor
+
+            @property
             def text(self):
                 return self._text
 
             @text.setter
             def text(self, text):
                 self._text = text
-                print("Aguarda new_player", text, self.text, self._tag)
+                # print("Aguarda new_player", text, self.text, self._tag)
                 if self._tag is not None:
                     self._tag.value = int(self._text)
 
@@ -147,7 +175,7 @@ class Body:
 
             def restore(self):
                 self._actor.classList.remove("is-active") if self._actor else None
-                print("Aguarda restore", self._actor, self.text, self._tag)
+                # print("Aguarda restore", self._actor, self.text, self._tag)
                 # self._action.stop()
 
             @classmethod
@@ -171,14 +199,25 @@ class Body:
         class Foto(Sentir):
 
             def _builder(self, n, foto):
+                def handle_event(data, el):
+                    y._current_handler(data, self.__class__.__name__, self._text)
+                    self._handle_part()
+                    # y.foto_handler(data, el)
                 c, b, d, f, self._sentiu = y.c, Z.b, Z.d, Z.f, foto
                 self._text = str(n)
                 self._tag = c(html.P, n, "par")
                 self._actor = c(d, [c(f, y.sprite(foto), f), self._tag],
-                                "bmp", handle=self._act(n, foto, y.foto_handler, True))
+                                "bmp", handle=self._act(n, foto, handle_event, True))
+                # "bmp", handle=self._act(n, foto, y.foto_handler, True))
                 node = c(d, self._actor, "cmn")
                 self.restore()
                 return node
+
+            def _handle_part(self):
+                self.restore_all()
+                y._current_part.activate_all()
+                y._current_element = self
+                print("handle foto part", self._text, )
 
             def activate(self):
                 # print(self._sentiu, self._action)
@@ -238,28 +277,17 @@ class Body:
             def __call__(self, arg):
                 # print("Activate", self.handle, arg)
                 self.handle(arg)
-
-        self.body = document.body
         self.part = namedtuple("Part", "foto, sentir, ficha, aguarda")(Foto, Sentir, Ficha, Aguardar())
         self._current_part = self.part.sentir
         self._tips = []
         self._componentes = {k: COMP(list(), list()) for k in [Sentir, Foto, Ficha, Aguardar]}
-        self._handle_emotions = self._handle_foto = no_op
-        self._handle_emotions = self.do_handle
-        # self.control = Control(self)
-        self.emo, self.chosen, self.bet, self._fotos, self.but = [list()] * 5
-        hub.register(dict(update_foto=self._update_foto))
-        hub.subscribe(self.__class__.__name__, "new_player", self.part.aguarda.new_player)
-        hub.subscribe(self.__class__.__name__, "proceed_game", self.part.aguarda.restore)
-
-        # self.go()
 
     def inicio(self):
         self.setup()
         self.render()
 
-    def _update_foto(self, idc, data):
-        self._componentes[self.part.foto].build[idc].text = data
+    # def _update_foto(self, idc, data):
+    #     self._componentes[self.part.foto].build[idc].text = data
 
     def do_handle(self, texto, tip, origin: Parte):
         self._tips.append(texto)
@@ -366,8 +394,8 @@ class Body:
 
         def aguarda():
             a = self.part.aguarda
-            print("aguarda", a._actor)
-            return a._actor
+            # print("aguarda", a.actor)
+            return a.actor
 
         def aposta():
             return self.part.ficha.build()
@@ -387,6 +415,9 @@ class Body:
         bd = [c(s, c(d, [gallery, buttons, panels, aposta, version], "cnt"), s), aguarda()]  # .build()]
         _ = self.body <= bd
 
-    def npc(self, *_):
-        print("npc")
+    # def npc(self, *_):
+    #     print("npc")
         # self._componentes[self.part.foto].build[0].text = "|"
+    def _current_handler(self, *args):
+        from controle import DATA
+        self.hub.execute("handle_event", DATA(*args))

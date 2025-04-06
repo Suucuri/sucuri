@@ -53,8 +53,8 @@ class Combo:
         return getattr(self, name) if condition else (self._proxy, name)
 
     def execute(self, method_name, *args, **_):
+        resolve = self.__publisher(method_name, *args)
         try:
-            resolve = self.__publisher(method_name, *args)
             return resolve if resolve else None
         except Exception as ex:
             print("execute Exception", ex, method_name, *args)

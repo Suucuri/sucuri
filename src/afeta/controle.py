@@ -31,6 +31,7 @@ def no_op(*_args):
 class Step:
     def __init__(self):
         self._nome = self._actor = self._action = self._text = self._tag = None
+        self._tip = []
 
     def start(self):
         pass
@@ -136,9 +137,9 @@ class Control:
                 print(self.__class__.__name__, "_step_one")
 
             def _step(self, data: DATA):
-                foto: Parte = ctrl._part.list.foto[data.origin]
+                foto: Parte = ctrl._part.list.foto[int(data.origin)]
                 foto.text = data.text
-                data.tip.update(DATA(data.text, foto, data.origin))
+                self._tip.append(DATA(data.text, foto, data.origin))
                 self._action()
 
             def _step_one(self):
@@ -194,7 +195,7 @@ class Control:
         return self._todas, bet, [ft.text for ft in self._part.list.foto], self._chosen
 
     def handle_event(self, data):
-        # print("handle_event", self._current_step)
+        print("Control handle_event", self._current_step, data)
         self._current_step.handle_event(data)
 
 

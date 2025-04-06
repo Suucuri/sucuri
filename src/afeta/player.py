@@ -49,7 +49,7 @@ class Player:
 
     def acknowledged(self, player=1):
         self.acknowledged_players += player
-        # boss.send(["error", f"acknowledged count:{self.acknowledged_players}"])
+        boss.send(["new_player", self.acknowledged_players])
 
         if self.acknowledged_players >= self.player_count:
             boss.send(["proceed_game"])

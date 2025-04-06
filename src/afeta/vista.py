@@ -109,6 +109,9 @@ class Body:
                 return [cls._build(n, _e) for n, _e in y.chosen]
 
         class Aguardar(Sentir):
+            def __init__(self):
+                super().__init__()
+                self._builder(0, 0)
 
             def _builder(self, n, _e):
                 c, b, d, h, r, s, p, t, z, self._nome = y.c, Z.b, Z.d, Z.h, Z.r, Z.s, Z.g, Z.t, Body.CLS, _e
@@ -118,7 +121,8 @@ class Body:
                 im.width, im.height, im.style.filter = 470, 400, "blur(8px)"
                 sp = [[c(t, z["u"], "h"), c(d, [c(d, "", "j")], "i")], ]
                 section = [c(d, [c(d, im, "e"), sp], "d")]
-                foot = [c(r, html.PROGRESS(0, Class="progress is-large is-info", value=20, max=100), "o")]
+                self._tag = html.PROGRESS(0, Class="progress is-large is-info", value=20, max=100)
+                foot = [c(r, self._tag, "o")]
                 content = [c(d, "", "b"), c(d, [head, section, foot], "l")]
                 self._actor = node = c(d, content, "a")
                 return node
@@ -130,21 +134,26 @@ class Body:
             @text.setter
             def text(self, text):
                 self._text = text
+                print("Aguarda new_player", text, self.text, self._tag)
                 if self._tag is not None:
-                    self._tag.value = self._text
+                    self._tag.value = int(self._text)
+
+            def new_player(self, players=1):
+                self.text = int(players) * 25
 
             def activate(self):
                 self._actor.classList.add("is-active")
                 self._action.go()
 
             def restore(self):
-                self._actor.classList.remove("is-active")
-                self._action.stop()
+                self._actor.classList.remove("is-active") if self._actor else None
+                print("Aguarda restore", self._actor, self.text, self._tag)
+                # self._action.stop()
 
             @classmethod
             def _build(cls, n, _e):
                 _cls = cls()
-                y._componentes[cls].build.append(_cls)
+                # y._componentes[cls].build.append(_cls)
                 return _cls._builder(n, _e)
 
             @classmethod
@@ -231,7 +240,7 @@ class Body:
                 self.handle(arg)
 
         self.body = document.body
-        self.part = namedtuple("Part", "foto, sentir, ficha, aguarda")(Foto, Sentir, Ficha, Aguardar)
+        self.part = namedtuple("Part", "foto, sentir, ficha, aguarda")(Foto, Sentir, Ficha, Aguardar())
         self._current_part = self.part.sentir
         self._tips = []
         self._componentes = {k: COMP(list(), list()) for k in [Sentir, Foto, Ficha, Aguardar]}
@@ -240,6 +249,9 @@ class Body:
         # self.control = Control(self)
         self.emo, self.chosen, self.bet, self._fotos, self.but = [list()] * 5
         hub.register(dict(update_foto=self._update_foto))
+        hub.subscribe(self.__class__.__name__, "new_player", self.part.aguarda.new_player)
+        hub.subscribe(self.__class__.__name__, "proceed_game", self.part.aguarda.restore)
+
         # self.go()
 
     def inicio(self):
@@ -352,6 +364,11 @@ class Body:
             track[6] = c(d, c(e, "🮕", "not"), "cmn")
             return track
 
+        def aguarda():
+            a = self.part.aguarda
+            print("aguarda", a._actor)
+            return a._actor
+
         def aposta():
             return self.part.ficha.build()
 
@@ -367,7 +384,7 @@ class Body:
         panels = c(d, c(d, panel(), "clv"), "box")
         aposta = c(d, c(d, aposta(), "cl1"), "box")
         version = c(p, "Version - ", "cvs")
-        bd = [c(s, c(d, [gallery, buttons, panels, aposta, version], "cnt"), s)]  # , self.part.aguarda.build()]
+        bd = [c(s, c(d, [gallery, buttons, panels, aposta, version], "cnt"), s), aguarda()]  # .build()]
         _ = self.body <= bd
 
     def npc(self, *_):

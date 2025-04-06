@@ -53,9 +53,13 @@ class Combo:
         return getattr(self, name) if condition else (self._proxy, name)
 
     def execute(self, method_name, *args, **_):
-        resolve = self.__publisher(method_name, *args)
+        try:
+            resolve = self.__publisher(method_name, *args)
+            return resolve if resolve else None
+        except Exception as ex:
+            print("execute Exception", ex, method_name, *args)
+            return None
         # print("execute resolve", resolve)
-        return resolve if resolve else None
 
     def _publish(self, component_name, method_name, method):
         self._publisher[component_name] = (method_name, method)
@@ -68,7 +72,7 @@ class Combo:
     def __publisher(self, method_name, *arguments):
         if method_name in self._subscriber:
             x = [method(*arguments) for component_name, method in self._subscriber[method_name]]
-            print("__publisher", x, self._subscriber[method_name])
+            # print("__publisher", x, self._subscriber[method_name])
             return x[0] if x or x[0] else None
         else:
             print("__publisher fail", method_name, self._subscriber)
@@ -107,10 +111,16 @@ class Hub(Combo):
         self.worker_builder()
         # self._open(0)
         self._application_builder()
-        self.execute("inicio")
         # ops = (self.error, self._subscriber["proceed_game"]())
-        ops = (self.error, lambda *a: self.execute("proceed_game", *a))
-        MS.G = {k: op for k, op in zip("error proceed_game".split(), ops)}
+        ops = (self.error, self.proc_game, self.new_player)
+        MS.G = {k: op for k, op in zip("error proceed_game new_player".split(), ops)}
+        self.execute("inicio")
+
+    def new_player(self, *a):
+        self.execute("new_player", *a)
+
+    def proc_game(self, *a):
+        self.execute("proceed_game", *a)
 
     def error(self, msg):
         InfoDialog("Worker Error", f"Error received : {msg}")
@@ -119,11 +129,7 @@ class Hub(Combo):
         def on_message(evt):
             data = evt.data
             print("worker on message", *data)
-            # ma = MA(*data)
-            # MS.x(ma.m, ma.a)
             MS.x(*data)
-            # self._handler["update_foto"](0, data) if "update_foto" in self._handler else None
-            # self._componentes[self.part.foto].build[0].text = data
 
         def on_ready(npc):
             print("npc on_ready", npc)

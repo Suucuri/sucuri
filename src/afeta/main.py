@@ -5,6 +5,9 @@
 Classes neste módulo:
     - :py:class:`Hub` communication hub.
 
+.. module:: main
+    :synopsis: A messaging hub implementing publisher-subscriber pattern for inter-module communication.
+
 .. codeauthor:: Carlo Oliveira <carlo@nce.ufrj.br>
 
 Changelog
@@ -17,7 +20,6 @@ Changelog
 |   **SPDX-License-Identifier:** `GNU General Public License v3.0 or later <https://is.gd/3Udt>`_.
 |   `Labase <https://labase.github.io/>`_ - `NCE <https://portal.nce.ufrj.br>`_ - `UFRJ <https://ufrj.br/>`_.
 """
-import json
 from collections import namedtuple
 
 from browser import worker, window, websocket
@@ -39,62 +41,134 @@ class MS:
 
 
 class Combo:
+    """
+    Central messaging hub implementing publisher-subscriber pattern to facilitate communication
+    between application components (hub, view, controller, work, db).
+
+    :param proxy: Proxy object for method forwarding (optional)
+    :type proxy: object
+
+    .. py:attribute:: COMBO
+        :type: namedtuple
+        Container for component references with fields: hub, view, control, work, db
+    """
+
     COMBO = namedtuple("Combo", ["hub", "view", "control", "work", "db"])
 
     def __init__(self, proxy=None):
+        """
+        Initialize messaging hub with proxy and component registry.
+        Creates empty dictionaries for publishers and subscribers.
+        """
         self._proxy = proxy
         self._publisher = {}
         self._subscriber = {}
         self._combo = self.COMBO
 
     def __getattr__(self, name):
-        # Forward any unknown attribute/method to the member
+        """
+        Attribute accessor that forwards unknown attributes/methods to proxy.
+
+        :param name: Attribute/method name being accessed
+        :type name: str
+        :return: Either local attribute or (proxy, name) tuple
+        :rtype: Union[object, tuple]
+        """
         condition = name.startswith("_") or name in ("subscribe", "execute")
         return getattr(self, name) if condition else (self._proxy, name)
 
     def execute(self, method_name, *args, **_):
-        resolve = self.__publisher(method_name, *args)
+        """
+        Execute a method through the publisher-subscriber system.
+
+        :param method_name: Name of the method to execute
+        :type method_name: str
+        :param args: Positional arguments for the method
+        :return: Result of the first subscriber's execution or None
+        :rtype: Optional[Any]
+        """
         try:
+            resolve = self.__publisher(method_name, *args)
             return resolve if resolve else None
         except Exception as ex:
             print("execute Exception", ex, method_name, *args)
             return None
-        # print("execute resolve", resolve)
 
     def _publish(self, component_name, method_name, method):
+        """
+        Register a publisher method.
+
+        :param component_name: Name of publishing component
+        :type component_name: str
+        :param method_name: Published method name
+        :type method_name: str
+        :param method: Callable method reference
+        :type method: Callable
+        :meta private:
+        """
         self._publisher[component_name] = (method_name, method)
 
     def subscribe(self, component_name, method_name, method):
+        """
+        Register a subscriber method for a given method name.
+
+        :param component_name: Name of subscribing component
+        :type component_name: str
+        :param method_name: Method name to subscribe to
+        :type method_name: str
+        :param method: Callable method to invoke
+        :type method: Callable
+        """
         sb, comp_met = self._subscriber, (component_name, method)
         sb.update({method_name: [comp_met] if method_name not in sb else sb[method_name] + [comp_met]})
-        # self._subscriber.setdefault(method_name, [component_name, method])
 
     def __publisher(self, method_name, *arguments):
+        """
+        Internal method to invoke subscribed methods.
+
+        :param method_name: Method name to publish
+        :type method_name: str
+        :param arguments: Arguments to pass to subscribers
+        :return: First subscriber's result or None
+        :rtype: Optional[Any]
+        :meta private:
+        """
         if method_name in self._subscriber:
             x = [method(*arguments) for component_name, method in self._subscriber[method_name]]
-            # print("__publisher", x, self._subscriber[method_name])
             return x[0] if x or x[0] else None
         else:
             print("__publisher fail", method_name, self._subscriber)
             return None
 
     def _application_builder(self):
+        """
+        Construct application component hierarchy.
+
+        Creates and initializes View, Controller, Work, and Db components,
+        wiring them into the COMBO structure.
+
+        :meta private:
+        """
         combo = self
         from vista import Body
         from controle import Control
 
         class View(Combo):
+            """Component responsible for UI presentation"""
             pass
 
         class Controller(Combo):
+            """Component handling business logic and workflow"""
             pass
 
         class Work(Combo):
+            """Background work processor"""
             def __init__(self):
                 super().__init__()
             pass
 
         class Db(Combo):
+            """Database access component"""
             pass
 
         self._combo(self, View(Body(self, self)), Controller(Control(self)), Work(), Db())

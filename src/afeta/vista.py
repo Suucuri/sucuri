@@ -20,11 +20,13 @@ Changelog
 |   `Labase <https://labase.github.io/>`_ - `NCE <https://portal.nce.ufrj.br>`_ - `UFRJ <https://ufrj.br/>`_.
 """
 from collections import namedtuple
-from random import choice
+from random import choice, randint
 from browser import document, html
+
 CI, FX, FY, AFETO = 10101, 12, 8, "url(_media/afetou.jpg)"
-Z = namedtuple("Z", "d s f b i p e")(
-    html.DIV, html.SECTION, html.FIGURE, html.BUTTON, html.IMG, html.SPAN, html.I)
+Z = namedtuple("Z", "d s f b i p e h r g t")(
+    html.DIV, html.SECTION, html.FIGURE, html.BUTTON, html.IMG, html.SPAN, html.I,
+    html.HEADER, html.FOOTER, html.P, html.H1)
 COMP = namedtuple("Comp", ["build", "comps"])
 
 
@@ -46,28 +48,60 @@ class Parte:
         if self._tag is not None:
             self._tag.innerHTML = self._text
 
+    def _handle_part(self):
+        self.activate_any()
+        self._current_element = self
+        # self._current_part.activate_all()
+        # print("handle foto", foto, self._current_element, self._componentes[self.part.foto].build)
+        # self._handle_foto(foto, el, self._current_element)
+
+    def activate_any(self):
+        pass
+
 
 class Body:
     """Dynamic Web Document Builder for Body"""
+    CLS = {'a': 'modal is-active', 'b': 'modal-background', 'c': 'modal-card-body',
+           'd': 'box has-text-centered vintage-box', 'e': 'vintage-frame', 'f': 'old-photo',
+           'g': 'title is-3 has-text-white waiting-title', 'h': 'subtitle is-5 has-text-light',
+           'i': 'loading-container', 'j': 'loading-spinner', 'k': 'has-text-white', 'l': 'modal-card',
+           'm': 'modal-card-head', 'n': 'modal-card-title', 'o': 'modal-card-foot', 'p': 'modal-close', 'q': 'delete',
+           'r': 'Aguarde os outros Jogadores', 's': 'Analisando fotos',
+           't': 'Revivendo memórias', 'u': 'Analisando emoções nas fotos...', 'v': 'Aguarde a sua vez'
+           }
     FT = None
 
     def __init__(self, hub, *_args, **_kwargs):
-        self._current_element = None
+        self.hub = hub
+        self._current_element = self._tips = self._current_part = None
         self._hub = hub
-        # self._controller = controller
         self._sentires, self.fotos, self._fichas = [list()] * 3
-        y = self
         hub.subscribe(self.__class__.__name__, "inicio", self.inicio)
+        self.body = document.body
+        self._handle_emotions = self._handle_foto = no_op
+        self._handle_emotions = self.do_handle
+        self.emo, self.chosen, self.bet, self._fotos, self.but = [list()] * 5
+        self._build_parts()
+        # hub.register(dict(update_foto=self._update_foto))
+        hub.subscribe(self.__class__.__name__, "new_player", self.part.aguarda.new_player)
+        hub.subscribe(self.__class__.__name__, "proceed_game", self.part.aguarda.restore)
+
+        # self.go()
+    def _build_parts(self):
+        y = self
 
         class Sentir(Parte):
             def _act(self, _, _e, _handler, go=False):
                 self._action = Activate(_handler, _e, target=self, go=go)
                 return self._action
 
+            def _handler(self, evt):
+                y._current_handler(evt, self.__class__.__name__, self._text)
+
             def _builder(self, n, _e):
                 c, b, d, self._nome = y.c, Z.b, Z.d, _e
                 self._text = str(n)
-                self._actor = c(b, _e, b if n else "d", handle=self._act(n, _e, y.emotion_handler))
+                self._actor = c(b, _e, b if n else "dk", handle=self._act(n, _e, y.emotion_handler))
                 node = c(d, self._actor, "cmn")
                 return node
 
@@ -98,17 +132,92 @@ class Body:
             def build(cls):
                 return [cls._build(n, _e) for n, _e in y.chosen]
 
+        class Aguardar(Sentir):
+            def __init__(self):
+                super().__init__()
+                self._builder(0, 0)
+
+            def _builder(self, n, _e):
+                c, b, d, h, r, s, p, t, z, self._nome = y.c, Z.b, Z.d, Z.h, Z.r, Z.s, Z.g, Z.t, Body.CLS, _e
+                button = html.BUTTON(Class="delete", **{"aria-label": "close"})
+                head = c(h, [c(p, z["r"], "n"), button], "m")
+                im = y.sprite(randint(0, 90))
+                im.width, im.height, im.style.filter = 470, 400, "blur(8px)"
+                sp = [[c(t, z["u"], "h"), c(d, [c(d, "", "j")], "i")], ]
+                section = [c(d, [c(d, im, "e"), sp], "d")]
+                self._tag = html.PROGRESS(0, Class="progress is-large is-info", value=20, max=100)
+                foot = [c(r, self._tag, "o")]
+                content = [c(d, "", "b"), c(d, [head, section, foot], "l")]
+                self._actor = node = c(d, content, "a")
+                return node
+
+            @property
+            def actor(self):
+                return self._actor
+
+            @property
+            def text(self):
+                return self._text
+
+            @text.setter
+            def text(self, text):
+                self._text = text
+                # print("Aguarda new_player", text, self.text, self._tag)
+                if self._tag is not None:
+                    self._tag.value = int(self._text)
+
+            def new_player(self, players=1):
+                self.text = int(players) * 25
+
+            def activate(self):
+                self._actor.classList.add("is-active")
+                self._action.go()
+
+            def restore(self):
+                self._actor.classList.remove("is-active") if self._actor else None
+                # print("Aguarda restore", self._actor, self.text, self._tag)
+                # self._action.stop()
+
+            @classmethod
+            def _build(cls, n, _e):
+                _cls = cls()
+                # y._componentes[cls].build.append(_cls)
+                return _cls._builder(n, _e)
+
+            @classmethod
+            def restore_all(cls):
+                [comp.restore() for comp in y._componentes[cls].build]
+
+            @classmethod
+            def activate_all(cls):
+                [comp.activate() for comp in y._componentes[cls].build]
+
+            @classmethod
+            def build(cls):
+                return cls._build(0, 0)
+
         class Foto(Sentir):
 
             def _builder(self, n, foto):
+                def handle_event(data, el):
+                    y._current_handler(data, self.__class__.__name__, self._text)
+                    self._handle_part()
+                    # y.foto_handler(data, el)
                 c, b, d, f, self._sentiu = y.c, Z.b, Z.d, Z.f, foto
                 self._text = str(n)
                 self._tag = c(html.P, n, "par")
                 self._actor = c(d, [c(f, y.sprite(foto), f), self._tag],
-                                "bmp", handle=self._act(n, foto, y.foto_handler, True))
+                                "bmp", handle=self._act(n, foto, handle_event, True))
+                # "bmp", handle=self._act(n, foto, y.foto_handler, True))
                 node = c(d, self._actor, "cmn")
                 self.restore()
                 return node
+
+            def _handle_part(self):
+                self.restore_all()
+                y._current_part.activate_all()
+                y._current_element = self
+                print("handle foto part", self._text, )
 
             def activate(self):
                 # print(self._sentiu, self._action)
@@ -129,7 +238,6 @@ class Body:
         class Ficha(Sentir):
 
             def _builder(self, n, _e):
-
                 def make_bet(bk, fd):
                     """Create bet chip with loosing and gaining points"""
                     dd = f'<span class="has-text-info-light is-size-4">{chr(CI + bk)}</span>'
@@ -156,6 +264,7 @@ class Body:
             def __init__(self, handler, element, target, go=True):
                 def event_handler(*_args, **_kwargs):
                     return handler(element, target)
+
                 self.handler = event_handler
                 self.handle = self.handler if go else no_op
 
@@ -168,24 +277,17 @@ class Body:
             def __call__(self, arg):
                 # print("Activate", self.handle, arg)
                 self.handle(arg)
-        self.body = document.body
-        self.part = namedtuple("Part", "foto, sentir, ficha")(Foto, Sentir, Ficha)
+        self.part = namedtuple("Part", "foto, sentir, ficha, aguarda")(Foto, Sentir, Ficha, Aguardar())
         self._current_part = self.part.sentir
         self._tips = []
-        self._componentes = {k: COMP(list(), list()) for k in [Sentir, Foto, Ficha]}
-        self._handle_emotions = self._handle_foto = no_op
-        self._handle_emotions = self.do_handle
-        # self.control = Control(self)
-        self.emo, self.chosen, self.bet, self._fotos, self.but = [list()] * 5
-        hub.register(dict(update_foto=self._update_foto))
-        # self.go()
+        self._componentes = {k: COMP(list(), list()) for k in [Sentir, Foto, Ficha, Aguardar]}
 
     def inicio(self):
         self.setup()
         self.render()
 
-    def _update_foto(self, idc, data):
-        self._componentes[self.part.foto].build[idc].text = data
+    # def _update_foto(self, idc, data):
+    #     self._componentes[self.part.foto].build[idc].text = data
 
     def do_handle(self, texto, tip, origin: Parte):
         self._tips.append(texto)
@@ -242,7 +344,7 @@ class Body:
             conta_, lado_ = x - 1 if x > 1 else 1, y - 1 if y > 1 else 1
             return (100 / conta_) * (item % x), (100 / lado_) * (item // x)
 
-        dw, dh,  = calc(FX, FY)
+        dw, dh, = calc(FX, FY)
         bp = f"{dw:.2f}% {dh:.2f}%"
         e = html.DIV(style=dict(width="270px", height="200px", backgroundImage=AFETO, overflow="hidden"))
         e.style.backgroundSize = f"{FX * 100}% {FY * 100}%"
@@ -262,9 +364,10 @@ class Body:
               "cmc": "columns is-multiline is-centered has-text-centered", "crd": "card",
               "bbt": "buttons has-addons is-centered mx-3 px-3", "par": "title is-5 mt-2",
               "go": "fas fa-circle fa-2x", "gat": "tag is-info is-medium", "not": "tag is-dark is-medium",
-              "d": "button is-danger is-larger is-fullwidth is-dark",
+              "dk": "button is-danger is-larger is-fullwidth is-dark",
               "cvs": "current_version is-size-7 has-text-grey-dark",
               "bom": "notification", "bmp": "box has-text-centered"}
+        CL.update(Body.CLS)
         _elt = elt(cnt, Class=CL[clazz])
         _elt.bind("click", lambda *_, _e=_elt: handle(_e)) if handle is not None else None
         return _elt
@@ -289,6 +392,11 @@ class Body:
             track[6] = c(d, c(e, "🮕", "not"), "cmn")
             return track
 
+        def aguarda():
+            a = self.part.aguarda
+            # print("aguarda", a.actor)
+            return a.actor
+
         def aposta():
             return self.part.ficha.build()
 
@@ -304,9 +412,12 @@ class Body:
         panels = c(d, c(d, panel(), "clv"), "box")
         aposta = c(d, c(d, aposta(), "cl1"), "box")
         version = c(p, "Version - ", "cvs")
-        bd = c(s, c(d, [gallery, buttons, panels, aposta, version], "cnt"), s)
+        bd = [c(s, c(d, [gallery, buttons, panels, aposta, version], "cnt"), s), aguarda()]  # .build()]
         _ = self.body <= bd
 
-    def npc(self, *_):
-        print("npc")
+    # def npc(self, *_):
+    #     print("npc")
         # self._componentes[self.part.foto].build[0].text = "|"
+    def _current_handler(self, *args):
+        from controle import DATA
+        self.hub.execute("handle_event", DATA(*args))

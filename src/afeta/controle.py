@@ -20,6 +20,7 @@ Changelog
 """
 from collections import namedtuple
 from random import shuffle, sample, choice
+
 DATA = namedtuple('DATA', ('text', 'tip', 'origin'))
 
 
@@ -30,11 +31,15 @@ def no_op(*_args):
 class Step:
     def __init__(self):
         self._nome = self._actor = self._action = self._text = self._tag = None
+        self._tip = []
 
     def start(self):
         pass
 
     def handle_event(self, data):
+        pass
+
+    def proceed_game(self):
         pass
 
 
@@ -75,9 +80,13 @@ class Control:
         self._sentir = "Amor Raiva Tristeza Alegria Surpresa Medo".split()
         self._msg = {}
         self.__part = namedtuple("Parts", "name, list")
-        self.__step = namedtuple("Step", "round, select, choose, vote, score")
+        self.__step = namedtuple("Step", "recruit, round, select, choose, vote, score")
         self._part = self._parts_builder()
         self._step = self._steps_builder()
+        gui.subscribe(self.__class__.__name__, "proceed_game", self.__proceed_game)
+
+    def __proceed_game(self):
+        self._current_step.proceed_game()
 
     def _parts_builder(self):
         class Sentir(Parte):
@@ -99,6 +108,13 @@ class Control:
     def _steps_builder(self):
         ctrl = self
 
+        class Recruit(Step):
+            def start(self):
+                print(self.__class__.__name__, "_step_one")
+                # ctrl._part.list.foto.extend([ctrl._part.name.foto(i) for i in range(ctrl._round + 1)])
+                ctrl._part.list.foto.append(ctrl._part.name.foto(ctrl._todas.pop()))
+                ctrl._emo = sample(ctrl._sentir, 4)
+
         class Round(Step):
             def start(self):
                 print(self.__class__.__name__, "_step_one")
@@ -108,6 +124,9 @@ class Control:
                 ctrl._chosen = [(0, choice(EMO[cs])) if cs in ctrl._emo else (1, cs) for cs in ctrl._sentir]
                 ctrl._part.list.sentir.clear()
                 ctrl._part.list.sentir.extend([ctrl._part.name.sentir(i) for i in ctrl._chosen])
+
+            def proceed_game(self):
+                print(self.__class__.__name__, "proceed_game")
                 ctrl._step.select.start()
 
         class Select(Step):
@@ -118,9 +137,9 @@ class Control:
                 print(self.__class__.__name__, "_step_one")
 
             def _step(self, data: DATA):
-                foto: Parte = ctrl._part.list.foto[data.origin]
+                foto: Parte = ctrl._part.list.foto[int(data.origin)]
                 foto.text = data.text
-                data.tip.update(DATA(data.text, foto, data.origin))
+                self._tip.append(DATA(data.text, foto, data.origin))
                 self._action()
 
             def _step_one(self):
@@ -146,15 +165,18 @@ class Control:
             def _step_three(self):
                 self._action = self._step_one
                 ctrl._step.score.start()
+
             pass
 
         class Score(Select):
             def _step_three(self):
                 self._action = self._step_one
                 ctrl._step.round.start()
+
             pass
 
-        return self.__step(round=Round(), select=Select(), choose=Choose(), vote=Vote(), score=Score())
+        return self.__step(
+            recruit=Recruit(), round=Round(), select=Select(), choose=Choose(), vote=Vote(), score=Score())
 
     def play(self):
         """Inicia o jogo da afetividade."""
@@ -173,7 +195,7 @@ class Control:
         return self._todas, bet, [ft.text for ft in self._part.list.foto], self._chosen
 
     def handle_event(self, data):
-        # print("handle_event", self._current_step)
+        print("Control handle_event", self._current_step, data)
         self._current_step.handle_event(data)
 
 
@@ -192,6 +214,8 @@ if __name__ == '__main__':
         def update(self, data: DATA):
             _ = self
             print(data._asdict())
+
+
     test = _Test()
     c = Control(test)
     tds, bets, fts, chs = c.play()

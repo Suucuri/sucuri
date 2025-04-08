@@ -3,10 +3,10 @@ version: '3.1'
 services:
   suucuri:
     build: .
-    command: python3 -m wsgi --port=8575
+    command: python3 -m wsgi --port=8665
     restart: always
     environment:
-      - VIRTUAL_HOST=horacio.nce.ufrj.br
-      - VIRTUAL_PORT=8575
+      - VIRTUAL_HOST=afetora.ydns.eu
+      - VIRTUAL_PORT=8665
     ports:
-      - "8575:8575"
+      - "8665:8665"

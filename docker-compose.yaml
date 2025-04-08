@@ -10,3 +10,7 @@ services:
       - VIRTUAL_PORT=8665
     ports:
       - "8665:8665"
+networks:
+  existing-network:
+    name: dockernet
+    external: true

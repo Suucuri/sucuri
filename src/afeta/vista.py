@@ -215,6 +215,7 @@ class Body:
 
             def _handle_part(self):
                 self.restore_all()
+                self.activate()
                 y._current_part.activate_all()
                 y._current_element = self
                 print("handle foto part", self._text, )
@@ -327,7 +328,7 @@ class Body:
         el.activate()
         self._current_element = el
         self._current_part.activate_all()
-        print("handle foto", foto, self._current_element, self._componentes[self.part.foto].build)
+        print("Vista handle foto", foto, self._current_element, self._componentes[self.part.foto].build)
         self._handle_foto(foto, el, self._current_element)
 
     def setup(self):

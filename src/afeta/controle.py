@@ -110,14 +110,14 @@ class Control:
 
         class Recruit(Step):
             def start(self):
-                print(self.__class__.__name__, "_step_one")
+                print(self.__class__.__name__, " Recruit _step_one")
                 # ctrl._part.list.foto.extend([ctrl._part.name.foto(i) for i in range(ctrl._round + 1)])
                 ctrl._part.list.foto.append(ctrl._part.name.foto(ctrl._todas.pop()))
                 ctrl._emo = sample(ctrl._sentir, 4)
 
         class Round(Step):
             def start(self):
-                print(self.__class__.__name__, "_step_one")
+                print(self.__class__.__name__, "Round _step_one")
                 # ctrl._part.list.foto.extend([ctrl._part.name.foto(i) for i in range(ctrl._round + 1)])
                 ctrl._part.list.foto.append(ctrl._part.name.foto(ctrl._todas.pop()))
                 ctrl._emo = sample(ctrl._sentir, 4)
@@ -134,7 +134,7 @@ class Control:
                 # ctrl._part.list.foto.extend([ctrl._part.name.foto(i) for i in range(ctrl._round + 1)])
                 ctrl._current_step = self
                 self._action = self._step_one
-                print(self.__class__.__name__, "_step_one")
+                print(self.__class__.__name__, "Select _start")
 
             def _step(self, data: DATA):
                 foto: Parte = ctrl._part.list.foto[int(data.origin)]
@@ -154,6 +154,7 @@ class Control:
                 ctrl._step.choose.start()
 
             def handle_event(self, data):
+                print(self.__class__.__name__, "handle_event", data)
                 self._step(data)
 
         class Choose(Select):

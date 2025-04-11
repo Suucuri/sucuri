@@ -70,7 +70,7 @@ class Control:
     """
 
     def __init__(self, gui, capacidade=2):
-        self._current_step = None
+        self._current_step = self.gui = gui
         # self._current = namedtuple("Current", "step, handler")(Step(), no_op)
         self._chosen = self._round = self._fotos = self._emo = None
         self._todas = list(range(48 * 2))
@@ -140,7 +140,9 @@ class Control:
                 foto: Parte = ctrl._part.list.foto[int(data.origin)]
                 foto.text = data.text
                 self._tip.append(DATA(data.text, foto, data.origin))
+                ctrl.gui.execute("view_update")
                 self._action()
+                print(self.__class__.__name__, "Select _step")
 
             def _step_one(self):
                 self._action = self._step_two

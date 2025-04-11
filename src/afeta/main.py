@@ -26,7 +26,10 @@ from browser import worker, window, websocket
 from browser.widgets.dialog import InfoDialog
 MA = namedtuple("MA", "m, a")
 
-HOST = window.location.host
+try:
+    HOST = window.location.host
+except AttributeError:
+    HOST = "127.0.0.1"
 print(str(HOST))
 
 
@@ -216,7 +219,10 @@ class Hub(Combo):
 
             # timer.set_interval(go_npc, 8000)
 
-        worker.create_worker("player", on_ready, on_message)
+        try:
+            worker.create_worker("player", on_ready, on_message)
+        except AttributeError:
+            pass
 
     def register(self, part):
         self._handler.update(part)

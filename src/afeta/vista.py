@@ -48,6 +48,9 @@ class Parte:
         if self._tag is not None:
             self._tag.innerHTML = self._text
 
+    def update_view(self, *args):
+        self._handle_part()
+
     def _handle_part(self):
         self.activate_any()
         self._current_element = self
@@ -85,6 +88,7 @@ class Body:
         # hub.register(dict(update_foto=self._update_foto))
         hub.subscribe(self.__class__.__name__, "new_player", self.part.aguarda.new_player)
         hub.subscribe(self.__class__.__name__, "proceed_game", self.part.aguarda.restore)
+        hub.subscribe(self.__class__.__name__, "view_update", self._view_update)
 
         # self.go()
     def _build_parts(self):
@@ -200,8 +204,9 @@ class Body:
 
             def _builder(self, n, foto):
                 def handle_event(data, el):
+                    y._current_element = self
                     y._current_handler(data, self.__class__.__name__, self._text)
-                    self._handle_part()
+                    # self._handle_part()
                     # y.foto_handler(data, el)
                 c, b, d, f, self._sentiu = y.c, Z.b, Z.d, Z.f, foto
                 self._text = str(n)
@@ -217,7 +222,7 @@ class Body:
                 self.restore_all()
                 self.activate()
                 y._current_part.activate_all()
-                y._current_element = self
+                # y._current_element = self
                 print("handle foto part", self._text, )
 
             def activate(self):
@@ -422,3 +427,7 @@ class Body:
     def _current_handler(self, *args):
         from controle import DATA
         self.hub.execute("handle_event", DATA(*args))
+
+    def _view_update(self, *args):
+        print("DID >>> _view_update")
+        self._current_element.update_view(*args)

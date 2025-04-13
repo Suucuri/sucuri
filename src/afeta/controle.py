@@ -141,25 +141,38 @@ class Control:
                 foto.text = data.text
                 self._tip.append(DATA(data.text, foto, data.origin))
                 ctrl.gui.execute("view_update")
+                self._action = self._step_one
                 self._action()
                 print(self.__class__.__name__, "Select _step")
 
             def _step_one(self):
                 self._action = self._step_two
+                ctrl.gui.execute("view_update")
                 print("Select _step_one")
 
             def _step_two(self):
                 self._action = self._step_three
+                ctrl.gui.execute("view_update")
+                print("Select _step_two")
 
             def _step_three(self):
                 self._action = self._step_one
+                ctrl.gui.execute("view_update")
+                print("Select _step_three")
                 ctrl._step.choose.start()
 
             def handle_event(self, data):
                 print(self.__class__.__name__, "handle_event", data)
-                self._step(data)
+                self._action()
+                #
+                # self._step(data)
 
         class Choose(Select):
+            def start(self):
+                ctrl._current_step = self
+                self._action = self._step_one
+                print(self.__class__.__name__, "Choose _start")
+
             def _step_three(self):
                 self._action = self._step_one
                 ctrl._step.vote.start()

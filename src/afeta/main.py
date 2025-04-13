@@ -90,8 +90,8 @@ class Combo:
         :return: Result of the first subscriber's execution or None
         :rtype: Optional[Any]
         """
+        resolve = self.__publisher(method_name, *args)
         try:
-            resolve = self.__publisher(method_name, *args)
             return resolve if resolve else None
         except Exception as ex:
             print("execute Exception", ex, method_name, *args)

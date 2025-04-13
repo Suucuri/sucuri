@@ -22,7 +22,7 @@ Changelog
 from collections import namedtuple
 from random import choice, randint
 from browser import document, html
-
+from typing import override
 CI, FX, FY, AFETO = 10101, 12, 8, "url(_media/afetou.jpg)"
 Z = namedtuple("Z", "d s f b i p e h r g t")(
     html.DIV, html.SECTION, html.FIGURE, html.BUTTON, html.IMG, html.SPAN, html.I,
@@ -36,7 +36,7 @@ def no_op(*_args):
 
 class Parte:
     def __init__(self):
-        self._nome = self._actor = self._action = self._text = self._tag = None
+        self._nome = self._actor = self._action = self._text = self._tag = self._last = None
 
     @property
     def text(self):
@@ -103,11 +103,26 @@ class Body:
                 y._current_handler(evt, self.__class__.__name__, self._text)
 
             def _builder(self, n, _e):
-                c, b, d, self._nome = y.c, Z.b, Z.d, _e
-                self._text = str(n)
-                self._actor = c(b, _e, b if n else "dk", handle=self._act(n, _e, y.emotion_handler))
+                def handle_event(data, el):
+                    self._text, self._last = _e, y._current_element
+                    y._current_element = self
+                    y._current_handler(data, self.__class__.__name__, n)  # self._text)
+
+                c, b, d, self._text = y.c, Z.b, Z.d, _e
+                self._text = _e
+                # self._actor = c(b, _e, b if n else "dk", handle=self._act(n, _e, y.emotion_handler))
+                self._actor = c(b, _e, b if n else "dk", handle=self._act(n, _e, handle_event))
                 node = c(d, self._actor, "cmn")
                 return node
+
+            @override
+            def _handle_part(self) -> None:
+                # print("handle emotion", self._text, y._current_element, self._nome, self._actor)
+                y.part.foto.restore_all()
+                y.part.sentir.restore_all()
+                self._last.text = self._text
+                # y._handle_emotions(self._text, self, y._current_element)
+                # y._current_element = self
 
             def activate(self):
                 if "is-danger" in self._actor.classList:
@@ -141,6 +156,7 @@ class Body:
                 super().__init__()
                 self._builder(0, 0)
 
+            @override
             def _builder(self, n, _e):
                 c, b, d, h, r, s, p, t, z, self._nome = y.c, Z.b, Z.d, Z.h, Z.r, Z.s, Z.g, Z.t, Body.CLS, _e
                 button = html.BUTTON(Class="delete", **{"aria-label": "close"})
@@ -173,10 +189,12 @@ class Body:
             def new_player(self, players=1):
                 self.text = int(players) * 25
 
+            @override
             def activate(self):
                 self._actor.classList.add("is-active")
                 self._action.go()
 
+            @override
             def restore(self):
                 self._actor.classList.remove("is-active") if self._actor else None
                 # print("Aguarda restore", self._actor, self.text, self._tag)
@@ -202,6 +220,7 @@ class Body:
 
         class Foto(Sentir):
 
+            @override
             def _builder(self, n, foto):
                 def handle_event(data, el):
                     y._current_element = self
@@ -218,18 +237,20 @@ class Body:
                 self.restore()
                 return node
 
-            def _handle_part(self):
+            @override
+            def _handle_part(self) -> None:
                 self.restore_all()
                 self.activate()
                 y._current_part.activate_all()
-                # y._current_element = self
                 print("handle foto part", self._text, )
 
+            @override
             def activate(self):
                 # print(self._sentiu, self._action)
                 self._actor.classList.add("has-background-grey")
                 self._action.stop()
 
+            @override
             def restore(self):
                 # print(self._sentiu, self._action)
                 self._actor.classList.remove("has-background-grey")
@@ -243,6 +264,7 @@ class Body:
 
         class Ficha(Sentir):
 
+            @override
             def _builder(self, n, _e):
                 def make_bet(bk, fd):
                     """Create bet chip with loosing and gaining points"""
@@ -328,13 +350,6 @@ class Body:
         self.part.sentir.restore_all()
         self._handle_emotions(emotion, sentir, self._current_element)
         self._current_element = sentir
-
-    def foto_handler(self, foto, el):
-        el.activate()
-        self._current_element = el
-        self._current_part.activate_all()
-        print("Vista handle foto", foto, self._current_element, self._componentes[self.part.foto].build)
-        self._handle_foto(foto, el, self._current_element)
 
     def setup(self):
         self.emo, abet, self._fotos, self.chosen = self._hub.execute("play")
@@ -429,5 +444,5 @@ class Body:
         self.hub.execute("handle_event", DATA(*args))
 
     def _view_update(self, *args):
-        print("DID >>> _view_update")
+        print("DID >>> _view_update", self._current_element, self._current_element.update_view)
         self._current_element.update_view(*args)

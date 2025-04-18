@@ -187,7 +187,7 @@ class Hub(Combo):
         self._ws = None
         self.worker_builder()
         # self._open(0)
-        self._application_builder()
+        # self._application_builder()
         # ops = (self.error, self._subscriber["proceed_game"]())
         ops = (self.error, self.proc_game, self.new_player)
         MS.G = {k: op for k, op in zip("error proceed_game new_player".split(), ops)}
@@ -259,4 +259,4 @@ class Hub(Combo):
 
 
 # Body(Control, Hub())
-Hub()
+# Hub()

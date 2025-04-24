@@ -13,6 +13,10 @@ Changelog
 .. versionadded::    25.03
    |br| Initial game implementation (22).
 
+.. versionadded::    25.04
+   |br| New component address registration (19).
+   |br| Response Objects (23).
+
 |   **Open Source Notification:** This file is part of open source program **Suucurijuba**
 |   **Copyright © 2024  Carlo Oliveira** <carlo@nce.ufrj.br>,
 |   **SPDX-License-Identifier:** `GNU General Public License v3.0 or later <https://is.gd/3Udt>`_.
@@ -79,27 +83,29 @@ class Afeto:
 
     def _build(self, hub):
         def _register_listeners():
-            print("_register_listeners")
+            # print("_register_listeners")
             hub.subscribe(self.__class__.__name__, "show_fotos", _show_fotos)
+            hub.subscribe(self.__class__.__name__, "foto_party", _show_fotos)
             hub.subscribe(self.__class__.__name__, "foto_sel", lambda me, *args: me._foto_sel(*args))
             hub.subscribe(self.__class__.__name__, "foto_emo", lambda me, *args: me._foto_emo(*args))
             hub.subscribe(self.__class__.__name__, "sel_done", _show_fotos)
             hub.subscribe(self.__class__.__name__, "emo_all", _emo_all)
             hub.subscribe(self.__class__.__name__, "emo_sel", lambda me, *args: me._emo_sel(*args))
+            hub.subscribe(self.__class__.__name__, "bet_all", _bet_all)
+            hub.subscribe(self.__class__.__name__, "bet_sel", lambda me, *args: me._bet_sel(*args))
 
         def _show_fotos(*_):
             [foto.restore() for foto in self._components.foto]
+            [sente.restore() for sente in self._components.sentir]
+            [ficha.restore() for ficha in self._components.ficha]
 
         def _emo_all(*_):
             [emo.activate() for emo in self._components.sentir]
 
+        def _bet_all(*_):
+            [ficha.activate() for ficha in self._components.ficha]
+
         class Foto(ParteResposta):
-            # def __init__(self):
-            #     super().__init__()
-
-            def _handle_action(self):
-                hub.execute("handle_event", self)
-
             def _foto_sel(self):
                 self._proxy.activate()
 
@@ -110,18 +116,6 @@ class Afeto:
                 self._proxy.restore()
 
         class Sentir(ParteResposta):
-
-            def _register_listeners(self):
-                print("Sentir_register_listeners")
-                # hub.subscribe(self.__class__.__name__, "emo_all", self._emo_all)
-                # hub.subscribe(self.__class__.__name__, "emo_sel", self._emo_sel)
-                # hub.subscribe(self.__class__.__name__, "sel_done", self._sel_done)
-
-            # def _emo_all(self, emos):
-            #     # [self._proxy.activate(foto) for foto in emos]
-            #     print("emo_all", emos)
-            #     [emo.activate() for emo in y._components.sentir]
-
             def _emo_sel(self):
                 self._proxy.restore()
                 hub.execute("sel_emo", self._proxy.nome)
@@ -130,14 +124,28 @@ class Afeto:
                 self._proxy.restore()
 
         class Ficha(ParteResposta):
-            pass
 
-        class Aguardar(ParteResposta):
-            pass
+            def _bet_sel(self):
+                self._proxy.restore()
+                hub.execute("sel_bet", self._proxy.nome)
+
+        class Aguarda(ParteResposta):
+
+            def _register_listeners(self):
+                hub.subscribe(self.__class__.__name__, "open_modal", self._open_modal)
+                hub.subscribe(self.__class__.__name__, "done_modal", self._done_modal)
+
+            def _open_modal(self, *_):
+                # print("Aguardar open_modal", self._proxy, self._proxy.activate)
+                self._proxy.activate()
+                # hub.execute("sel_emo", self._proxy.nome)
+
+            def _done_modal(self, *_):
+                self._proxy.restore()
 
         # y = self
         _register_listeners()
-        return PARTE(Foto, Sentir, Ficha, Aguardar)
+        return PARTE(Foto, Sentir, Ficha, Aguarda)
 
 
 if __name__ == '__main__':

@@ -22,7 +22,7 @@ Changelog
 |   **SPDX-License-Identifier:** `GNU General Public License v3.0 or later <https://is.gd/3Udt>`_.
 |   `Labase <https://labase.github.io/>`_ - `NCE <https://portal.nce.ufrj.br>`_ - `UFRJ <https://ufrj.br/>`_.
 """
-from vitollino import Cena, STYLE, Elemento
+from vitollino import Cena, Elemento
 from browser import html, markdown, window
 import vitollino
 from text import PFD, IMG

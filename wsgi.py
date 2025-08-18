@@ -76,7 +76,7 @@ class SocketHandler(websocket.WebSocketHandler):
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         try:
-            with open(os.path.join(root, 'src/index.html')) as f:
+            with open(os.path.join(root, 'src/alite/index.html')) as f:
                 self.write(f.read())
         except IOError as e:
             self.write("404: Not Found")

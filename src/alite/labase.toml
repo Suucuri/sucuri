@@ -1,0 +1,33 @@
+title = "Alite"
+menu = "#sobre Sobre|#participantes Equipe|#projetos Projetos|#publica Publicações|#contato Contato"
+prefix = "https://cdnjs.cloudflare.com/ajax/libs/"
+libs = "bulma/1.0.4/css/bulma.min.css font-awesome/7.0.0/css/all.min.css"
+[builder.nav]
+ha0 = {aria_expanded="false", aria_label="menu", Class="navbar-burger", data_target="navbarBasicExample", role="button"}
+lc0 = {__0={__ha0="label", Class="navbar-item", href="ref"}, _b="label ref", _c="menu"}
+hh0 = {__ha0={__0="title", Class="navbar-item", style="color: var(--coral);"}, Class="title is-4"}
+hd0 = {__0=["hh0", "ha0"], Class="navbar-brand"}
+hd1 = {__hd0={__0="ha0", Class="navbar-end"}, Class="navbar-menu", id="navbarBasicExample"}
+#cont = t.d([brand, menu], Class="container")
+hd2 = {__0=["hd0", "menu"], Class="container"}
+#return t.n(cont, Class="navbar is-fixed-top", role="navigation", aria_label="main navigation")
+hn0__ = {__0="hd2", Class="navbar is-fixed-top", role="navigation", aria_label="main navigation"}
+
+[sobre.card__0]
+title = "Formação"
+caption = """
+Capacitação de alunos em diferentes níveis acadêmicos, desde a extensão até a pós-graduação,
+preparando-os para os desafios do mercado de tecnologia educacional."""
+icon = "fa-solid fa-person-chalkboard"
+[sobre.card__1]
+title = "Games Educativos"
+caption = """
+Desenvolvimento de jogos inovadores que transformam o aprendizado em uma experiência envolvente e eficaz,
+utilizando técnicas de gamificação e design instrucional."""
+icon = "fa-solid fa-gamepad"
+[sobre.card__2]
+title = "Neuropedagogia"
+caption = """
+Análise de dados cognitivos para entender e otimizar o processo de aprendizagem,
+criando soluções adaptativas que se ajustam ao ritmo de cada estudante."""
+icon = "fa-solid fa-brain"

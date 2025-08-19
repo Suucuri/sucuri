@@ -3,17 +3,17 @@
 """Main Page Builder.
 
 Classes neste módulo:
-    - :py:funct: message NPC Player.
-    - :py:class:`PageBuilder` handle page creation.
+    - :py:class:`Template` Html calls and template code builder.
+    - :py:class:`PageBuilder` builds a page from TOML description.
 
 .. codeauthor:: Carlo Oliveira <carlo@nce.ufrj.br>
-.. tip:: *Milestone* ⛲ 🛠️ ⭐Golden Penta (08/17)
-.. code-block:: python
+.. tip:: *Milestone* 🚧 ⛲ 🛠️ Golden Penta ⭐ 25.08 (17)
 
 Changelog
 ---------
 .. versionadded::    25.08
    |br| Initial builder implementation (17).
+   |br| code from toml (18).
 
 |   **Open Source Notification:** This file is part of open source program **Alite**
 |   **Copyright © 2025  Carlo Oliveira** <carlo@nce.ufrj.br>,
@@ -22,66 +22,75 @@ from collections import namedtuple
 from tomlib import loads
 from browser import document as doc, html as ht
 
-CF = "https://cdnjs.cloudflare.com/ajax/libs/"
-lb = "bulma/1.0.4/css/bulma.min.css font-awesome/7.0.0/css/all.min.css".split()
-TOML = '''
-title = "Alite"
-menu = "#sobre Sobre|#participantes Equipe|#projetos Projetos|#publica Publicações|#contato Contato"
-prefix = "https://cdnjs.cloudflare.com/ajax/libs/"
-libs = "bulma/1.0.4/css/bulma.min.css font-awesome/7.0.0/css/all.min.css"
-[builder.nav]
-ha0 = {aria_expanded="false", aria_label="menu", Class="navbar-burger", data_target="navbarBasicExample", role="button"}
-lc0 = {__0={__ha0="label", Class="navbar-item", href="ref"}, _b="label ref", _c="menu"}
-hh0 = {__ha0={__0="title", Class="navbar-item", style="color: var(--coral);"}, Class="title is-4"}
-hd0 = {__0=["hh0", "ha0"], Class="navbar-brand"}
-hd1 = {__hd0={__0="ha0", Class="navbar-end"}, Class="navbar-menu", id="navbarBasicExample"}
-#cont = t.d([brand, menu], Class="container")
-hd2 = {__0=["hd0", "menu"], Class="container"}
-#return t.n(cont, Class="navbar is-fixed-top", role="navigation", aria_label="main navigation")
-hn0__ = {__0="hd2", Class="navbar is-fixed-top", role="navigation", aria_label="main navigation"}
-
-[sobre.card__0]
-title = "Formação"
-caption = """
-Capacitação de alunos em diferentes níveis acadêmicos, desde a extensão até a pós-graduação,
-preparando-os para os desafios do mercado de tecnologia educacional."""
-icon = "fa-solid fa-person-chalkboard"
-[sobre.card__1]
-title = "Games Educativos"
-caption = """
-Desenvolvimento de jogos inovadores que transformam o aprendizado em uma experiência envolvente e eficaz,
-utilizando técnicas de gamificação e design instrucional."""
-icon = "fa-solid fa-gamepad"
-[sobre.card__2]
-title = "Neuropedagogia"
-caption = """
-Análise de dados cognitivos para entender e otimizar o processo de aprendizagem,
-criando soluções adaptativas que se ajustam ao ritmo de cada estudante."""
-icon = "fa-solid fa-brain"
-'''
-
 
 class Template:
-    def __init__(self, ):
-        self.names = {}
-        self.template = namedtuple("template", "n d h a z s p x r u l y")(
+    """Html calls and template code builder.
+
+    """
+    def __init__(self):
+        self.names, self.macros = {}, {}
+        self.tags = g = "n d h a z s p x r u l y"
+        self.template = namedtuple("template", g)(
             n=ht.NAV, d=ht.DIV, h=ht.H1, a=ht.A, z=ht.SECTION, s=ht.SPAN, p=ht.P, x=ht.H2, r=ht.HR, u=ht.UL,
             l=ht.LI, y=ht.H4)
 
+    def exec(self, macro):
+        def no_tag(a):
+            return lambda aaa=a, aa="non", **bb: [aaa, aa, bb]
+        tags = self.template._asdict()
+        tags_ = {k: no_tag(k) for k in self.tags}
+        args = [f"__h{tg}{ix}" for tg in tags for ix in "0123456789"]
+
+        def get_name(nome):
+            if nome in self.names:
+                return self.names[nome]
+            else:
+                return nome
+
+        def make_code(nome, dicionario):
+            nome = nome[2:] if nome.startswith("__") else nome
+            if not isinstance(dicionario, dict):
+                print("not isinstance(dicionario, dict)", dicionario)
+                return dicionario  # self.template.d()
+            _tags = [make_code(tg[2:4], arg) for tg, arg in dicionario.items() if tg[0:4] in args]
+            _args = dicionario.pop("__0", None) or _tags
+            _tag = nome[1]
+            _ = [dicionario.pop(tg, None) for tg in args if "__" in tg]
+            if _tag not in tags:
+                print("code_tag_tags_tag not in tags", _tag, _args)
+                return self.template.d()
+            if _args:
+                _args = [get_name(ar) for ar in _args] if isinstance(_args, list) else get_name(_args)
+                print("code_make_code_tags", nome, "_args", _args, "dict", dicionario, "macro", macro)
+                _code = tags[_tag](_args, **dicionario)
+            else:
+                _code = tags[_tag](**dicionario)
+            self.names[f"{nome}"] = _code
+            return _code
+
+        code = {name: make_code(name, _macro) for name, _macro in self.names.items()}  # if name[-1] != "_"}
+        # for name, macro in self.names.items():
+        #     code[name] = (name, macro)
+        main = [name for name in code.keys() if name.endswith("__")][0]
+        [print("code", n, code) for n, code in code.items()]
+        print("main", main, code[main])
+        return code[main]
+
     def load(self, raiz, esquema):
-        def register_names(dicionario):
+        def register_names(fix, dicionario):
             for k, v in dicionario.items():
                 if isinstance(v, str):
                     pass
                     # self.names[k] = v
                 elif isinstance(v, dict):
                     if k[0] == "h" and k[-1] in "0123456789_":
-                        self.names[k] = v
-                    register_names(v)
+                        self.names[f"{fix}_{k}"] = v
+                    register_names(f"{fix}_{k}", v)
+
         code = esquema[raiz]
-        [self.names.update({key: {}}) for key in code.keys()]
-        register_names(code)
-        print("name", self.names)
+        [self.macros.update({key: {}}) for key in code.keys()]
+        register_names("", code)
+        print("macro", self.macros, "name", self.names)
 
     def nav(self, title, menus):
         t = self.template
@@ -145,6 +154,7 @@ class PageBuilder:
         tgs += [ht.LINK(rel="shortcut icon", href="/_media/suucurijuba.png", type="image/x-icon")]
         tgs += [ht.META(charset="utf-8"), ht.META(name="viewport", content="width=device-width, initial-scale=1")]
         _ = [doc.head <= tg for tg in tgs]
+        self.template = Template()
         self.body = doc.body
         self.doc = doc
         doc.title = cf["title"]
@@ -154,11 +164,17 @@ class PageBuilder:
 
     def build(self, page=None):
         page = page or self
-        t = Template()
+        t = self.template
         t.load("builder", self.config)
-        _ = self.body <= t.nav(page.title, page.menus)
+        t.names["menu"] = [t.template.a(label, Class="navbar-item", href=ref) for ref, label in self.menus]
+
+        print('t.exec("nav")', t.exec("nav"))
+        _ = self.body <= t.exec("nav")
+        # _ = self.body <= t.nav(page.title, page.menus)
         _ = self.body <= t.hero(page.title, page.menus)
         _ = self.body <= t.sobre(self.config["sobre"])
+        print("macro", t.macros, "name", t.names)
+
         return self
 
 

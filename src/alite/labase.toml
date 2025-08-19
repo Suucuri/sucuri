@@ -1,17 +1,21 @@
+#🏺 Spike Alite 25.08 main ⚝ ⭐Golden Penta (08/17)
+#Open Source program Alite Sucuri/sucuri - Copyright © 2025  Carlo Oliveira** <carlo@nce.ufrj.br>,
+#PDX-License-Identifier:** `GNU General Public License v3.0 or later <http://is.gd/3Udt>`_.
+#🚧 ⛲ 🛠️ Golden Penta ⭐ 25.08 (17)
 title = "Alite"
 menu = "#sobre Sobre|#participantes Equipe|#projetos Projetos|#publica Publicações|#contato Contato"
 prefix = "https://cdnjs.cloudflare.com/ajax/libs/"
 libs = "bulma/1.0.4/css/bulma.min.css font-awesome/7.0.0/css/all.min.css"
 [builder.nav]
 ha0 = {aria_expanded="false", aria_label="menu", Class="navbar-burger", data_target="navbarBasicExample", role="button"}
-lc0 = {__0={__ha0="label", Class="navbar-item", href="ref"}, _b="label ref", _c="menu"}
-hh0 = {__ha0={__0="title", Class="navbar-item", style="color: var(--coral);"}, Class="title is-4"}
-hd0 = {__0=["hh0", "ha0"], Class="navbar-brand"}
-hd1 = {__hd0={__0="ha0", Class="navbar-end"}, Class="navbar-menu", id="navbarBasicExample"}
+l_0 = {__0={__ha0="label", Class="navbar-item", href="ref"}, _b="label ref", _c="menu"}
+hh0 = {__ha0={__0="LABASE", Class="navbar-item", style="color: var(--coral);"}, Class="title is-4"}
+hd0 = {__0=["_nav_hh0", "_nav_ha0"], Class="navbar-brand"}
+hd1 = {__hd0={__0="_nav_hd0", Class="navbar-end"}, Class="navbar-menu", id="navbarBasicExample"}
 #cont = t.d([brand, menu], Class="container")
-hd2 = {__0=["hd0", "menu"], Class="container"}
+hd2 = {__0=["_nav_hd0", "menu"], Class="container"}
 #return t.n(cont, Class="navbar is-fixed-top", role="navigation", aria_label="main navigation")
-hn0__ = {__0="hd2", Class="navbar is-fixed-top", role="navigation", aria_label="main navigation"}
+hn0__ = {__0="_nav_hd2", Class="navbar is-fixed-top", role="navigation", aria_label="main navigation"}
 
 [sobre.card__0]
 title = "Formação"

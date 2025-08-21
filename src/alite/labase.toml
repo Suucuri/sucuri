@@ -7,11 +7,16 @@ menu = "#sobre Sobre|#participantes Equipe|#projetos Projetos|#publica Publicaç
 prefix = "https://cdnjs.cloudflare.com/ajax/libs/"
 libs = "bulma/1.0.4/css/bulma.min.css font-awesome/7.0.0/css/all.min.css"
 [builder.nav]
+#lg = t.a(t.i(src="/_media/suucurijuba.png",alt="LABASE", width="26", height="28"), Class="navbar-item", href="/")
+#start = t.d(t.a("LABASE", Class="navbar-item", style="color: var(--coral);", href="/"), Class="navbar-start")
+
 ha0 = {aria_expanded="false", aria_label="menu", Class="navbar-burger", data_target="navbarBasicExample", role="button"}
+ha1 = {__hi0={__0="", src="/_media/suucurijuba.png",alt="LABASE", width="26", height="28"}, Class="navbar-item", href="/"}
 l_0 = {__0={__ha0="label", Class="navbar-item", href="ref"}, _b="label ref", _c="menu"}
-hh0 = {__ha0={__0="LABASE", Class="navbar-item", style="color: var(--coral);"}, Class="title is-4"}
-hd0 = {__0=["_nav_hh0", "_nav_ha0"], Class="navbar-brand"}
+#hh0 = {__ha0={__0="LABASE", Class="navbar-item", style="color: var(--coral);"}, Class="title is-4"}
 hd1 = {__hd0={__0="_nav_hd0", Class="navbar-end"}, Class="navbar-menu", id="navbarBasicExample"}
+hd3 = {__ha1={__0="LABASE", Class="navbar-item", style="color: var(--coral);", href="/"}, Class="navbar-start"}
+hd0 = {__0=["_nav_ha1", "_nav_hd3", "_nav_ha0"], Class="navbar-brand"}
 #cont = t.d([brand, menu], Class="container")
 hd2 = {__0=["_nav_hd0", "menu"], Class="container"}
 #return t.n(cont, Class="navbar is-fixed-top", role="navigation", aria_label="main navigation")

@@ -29,17 +29,20 @@ class Template:
     """
     def __init__(self):
         self.names, self.macros = {}, {}
-        self.tags = g = "n d h a z s p x r u l y"
+        self.tags = g = "n d h a z s p x r u l y i"
         self.template = namedtuple("template", g)(
             n=ht.NAV, d=ht.DIV, h=ht.H1, a=ht.A, z=ht.SECTION, s=ht.SPAN, p=ht.P, x=ht.H2, r=ht.HR, u=ht.UL,
-            l=ht.LI, y=ht.H4)
+            l=ht.LI, y=ht.H4, i=ht.IMG)
 
     def exec(self, macro):
-        def no_tag(a):
-            return lambda aaa=a, aa="non", **bb: [aaa, aa, bb]
         tags = self.template._asdict()
-        tags_ = {k: no_tag(k) for k in self.tags}
+        # tags_ = {k: no_tag(k) for k in self.tags}
         args = [f"__h{tg}{ix}" for tg in tags for ix in "0123456789"]
+        def list_comprehension(dicionario):
+            """l_0 = {__0={__ha0="label", Class="navbar-item", href="ref"}, _b="label ref", _c="menu"}
+            """
+            stat = dicionario.get("__0", {})
+
 
         def get_name(nome):
             if nome in self.names:
@@ -54,7 +57,7 @@ class Template:
                 return dicionario  # self.template.d()
             _tags = [make_code(tg[2:4], arg) for tg, arg in dicionario.items() if tg[0:4] in args]
             _args = dicionario.pop("__0", None) or _tags
-            _tag = nome[1]
+            _tag = nome[6]
             _ = [dicionario.pop(tg, None) for tg in args if "__" in tg]
             if _tag not in tags:
                 print("code_tag_tags_tag not in tags", _tag, _args)
@@ -94,11 +97,13 @@ class Template:
 
     def nav(self, title, menus):
         t = self.template
+        # h = t.h(t.a(title, Class="navbar-item", style="color: var(--coral);"), Class="title is-4")
         a = t.a(aria_expanded="false", aria_label="menu", Class="navbar-burger",
                 data_target="navbarBasicExample", role="button")
         m = [t.a(label, Class="navbar-item", href=ref) for ref, label in menus]
-        h = t.h(t.a(title, Class="navbar-item", style="color: var(--coral);"), Class="title is-4")
-        brand = t.d([h, a], Class="navbar-brand")
+        lg = t.a(t.i(src="/_media/suucurijuba.png",alt="LABASE", width="26", height="28"), Class="navbar-item", href="/")
+        start = t.d(t.a("LABASE", Class="navbar-item", style="color: var(--coral);", href="/"), Class="navbar-start")
+        brand = t.d([lg, start, a], Class="navbar-brand")
         # brand = t.d(t.d([h, a], Class="navbar-brand"))
         menu = t.d(t.d(m, Class="navbar-end"), Class="navbar-menu", id="navbarBasicExample")
         cont = t.d([brand, menu], Class="container")
@@ -179,7 +184,10 @@ class PageBuilder:
 
 
 if __name__ == "__main__":
-    builder = PageBuilder().build()
+    import html_build as htb
+    # builder = PageBuilder().build()
+    builder = htb.TemplateBuilder()
+    builder.build()
 
 '''
 <section class="section" id="sobre">

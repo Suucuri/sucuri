@@ -14,6 +14,7 @@ Changelog
 .. versionadded::    25.08
    |br| Initial builder implementation (17).
    |br| code from toml (18).
+   |br| import from html_build (23).
 
 |   **Open Source Notification:** This file is part of open source program **Alite**
 |   **Copyright © 2025  Carlo Oliveira** <carlo@nce.ufrj.br>,
@@ -185,9 +186,11 @@ class PageBuilder:
 
 if __name__ == "__main__":
     import html_build as htb
+    htb.main()
+
     # builder = PageBuilder().build()
-    builder = htb.TemplateBuilder()
-    builder.build()
+    # builder = htb.TemplateBuilder()
+    # builder.build()
 
 '''
 <section class="section" id="sobre">

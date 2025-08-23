@@ -5,7 +5,7 @@
 Reads a Template builder an fill in content data.
 
 Classes neste módulo:
-    - :py:class:`Template` Html calls and template code builder.
+    - :py:class:`TemplateBuilder` Html calls and template code builder.
 
 .. codeauthor:: Carlo Oliveira <carlo@nce.ufrj.br>
 .. tip:: *Milestone* 🚧 ⛲ 🛠️ Golden Penta ⭐ 25.08 (21)
@@ -14,60 +14,188 @@ Changelog
 ---------
 .. versionadded::    25.08
    |br| Initial builder implementation (21).
-   |br| code from toml (18).
+   |br| added list comprehension (23).
 
 |   **Open Source Notification:** This file is part of open source program **Alite**
 |   **Copyright © 2025  Carlo Oliveira** <carlo@nce.ufrj.br>,
 """
 from collections import namedtuple
-# from tomlib import loads
 from browser import document as doc, html as ht
+
 NO_DICT = {}
 
-HTML = namedtuple('HTML', "n d h a z s p x r u l y i k m")
 
-_ = dict(
-    n=ht.NAV, d=ht.DIV, h=ht.H1, a=ht.A, z=ht.SECTION, s=ht.SPAN, p=ht.P, x=ht.H2, r=ht.HR, u=ht.UL,
-    l=ht.LI, y=ht.H4, i=ht.IMG, k=ht.LINK, m=ht.META, )
+class TemplateBuilder:
+    """A builder class for creating HTML templates dynamically.
 
+    This class provides methods to parse template data and generate HTML elements
+    using Brython's HTML components. It supports basic HTML elements and list comprehensions
+    for generating repeated elements.
 
-class TemplateBuilder(HTML):
-    def __new__(cls):
-        self = super(TemplateBuilder, cls).__new__(cls,
-            n=ht.NAV, d=ht.DIV, h=ht.H1, a=ht.A, z=ht.SECTION, s=ht.SPAN, p=ht.P, x=ht.H2, r=ht.HR, u=ht.UL, # noqa
-            l=ht.LI, y=ht.H4, i=ht.IMG, k=ht.LINK, m=ht.META, ) # noqa
-        return self
+    Attributes
+    ----------
+    HTML : namedtuple
+        A collection of HTML element constructors for common tags.
+    names : dict
+        A dictionary storing named elements for reference during template parsing.
+
+    Examples
+    --------
+    >>> builder = TemplateBuilder()
+    >>> template_data = {"h1_0": {"text": "Hello World"}}
+    >>> elements = builder.build(template_data)
+    """
+
+    HTML = namedtuple('HTML', "n d h a z s p x r u l y i k m")(
+        n=ht.NAV, d=ht.DIV, h=ht.H1, a=ht.A, z=ht.SECTION, s=ht.SPAN, p=ht.P, x=ht.H2, r=ht.HR, u=ht.UL,
+        l=ht.LI, y=ht.H4, i=ht.IMG, k=ht.LINK, m=ht.META, )
 
     def __init__(self):
-        super().__init__() # noqa
-        self.content = None
+        """Initialize the TemplateBuilder with HTML element references and an empty names dictionary."""
+        super().__init__()  # noqa
+        self.t = TemplateBuilder.HTML
         self.names = {}
 
     def parse_template(self, data):
-        tags = self._asdict()
-        code = [tags[tag[1]](**kw) for tag, kw in data.items()]
+        """Parse template data and generate corresponding HTML elements.
+
+        This method processes a dictionary of template specifications and converts them
+        into HTML elements. It handles both single elements and list comprehensions.
+
+        Parameters
+        ----------
+        data : dict
+            A dictionary where keys represent element identifiers and values are
+            dictionaries of attributes for those elements.
+
+        Returns
+        -------
+        list
+            A list of generated HTML elements.
+
+        Raises
+        ------
+        ValueError
+            If an element identifier format is not recognized.
+        """
+
+        def do_parse(tg, **kw):
+            match tg[0]:
+                case 'h':
+                    coded = tags[tg[1]](**kw)
+                    self.names[tg] = coded
+                    return [coded]
+                case 'l':
+                    return self.list_comprehension(**kw)
+                case _:
+                    return [self.t.d()]
+
+        tags = self.t._asdict()
+        code = [entity for tag, kw in data.items() for entity in do_parse(tag, **kw)]
         return code
 
     def get_names(self, td):
+        """Retrieve a named element from the internal registry.
+
+        Parameters
+        ----------
+        td : str
+            The identifier of the element to retrieve.
+
+        Returns
+        -------
+        object
+            The element if found, or the original identifier if not found.
+        """
         return td if td not in self.names else self.names.get(td, [])
 
-    def list_comprehension(self, td):
-        return [td.xp(self.get_names(data)) for data in td.col]
+    def list_comprehension(self, l_x, l_y):
+        """Generate a list of elements based on template data.
 
-    def build(self, data: dict=None):
-        h = self
+        This method implements a list comprehension-like functionality for
+        generating multiple similar elements with different data.
+
+        Parameters
+        ----------
+        l_x : str
+            The template identifier to use for each element.
+        l_y : list
+            A list of dictionaries containing data for each element.
+
+        Returns
+        -------
+        list
+            A list of generated HTML elements.
+        """
+        nm = {l_x: 0} if not isinstance(n := self.get_names(l_x), dict) else n
+
+        def do_expression(data):
+            nm.update(data)
+            nmc = {l_x: nm}
+            # print("do_expression", nm, "nmc", nmc, "data", data)
+            return self.parse_template(nmc)[0]
+
+        # print("list_comprehension", l_x, "data", l_y, self.get_names(l_x))
+        return [do_expression(data) for data in l_y]
+
+    def build(self, data: dict = None):
+        """Build and render the complete HTML template.
+
+        This is the main entry point for generating HTML from template data.
+        It registers all named elements, parses the template, and attaches
+        the resulting elements to the document head.
+
+        Parameters
+        ----------
+        data : dict, optional
+            A dictionary containing the template specification. If None,
+            an empty template is generated.
+
+        Returns
+        -------
+        list
+            A list of all generated HTML elements.
+        """
+
+        def register_names(fix, dicionario):
+            for k, v in dicionario.items():
+                if k[0] == "h" and k[-1] in "0123456789_":
+                    self.names[f"{k}_{fix}_"] = v
+                register_names(f"{k}_{fix}_", v) if isinstance(v, dict) else None
+
+        register_names("", data) if data is not None else None
         data = self.parse_template(data or {})
-
-        # prefix = "https://cdnjs.cloudflare.com/ajax/libs/"
-        # libs = "bulma/1.0.4/css/bulma.min.css font-awesome/7.0.0/css/all.min.css".split()
-        # tgs = [h.k(rel="stylesheet", href=prefix + tg) for tg in libs]
-        tgs = [h.k(rel="stylesheet", href="/css/labase.css")]
-        tgs += [h.k(rel="shortcut icon", href="/_media/suucurijuba.png", type="image/x-icon")]+data
-        # tgs += [h.m(charset="utf-8"), ht.META(name="viewport", content="width=device-width, initial-scale=1")]
-        _ = [doc.head <= tg for tg in tgs]
+        _ = [doc.head <= tg for tg in data]
         doc.title = "LABASE"
-        return tgs
+        return data
+
+
+def _populate_html():
+    """Create template data for common HTML head elements.
+
+    This function generates a template specification for common HTML head
+    elements including CSS stylesheets and favicon.
+
+    Returns
+    -------
+    dict
+        A dictionary containing template specifications for head elements.
+    """
+    libs = "bulma/1.0.4/css/bulma.min.css font-awesome/7.0.0/css/all.min.css /css/labase.css".split()
+    dt = [dict(href=lb) for lb in libs]
+    di = dict(rel="shortcut icon", href="/_media/suucurijuba.png", type="image/x-icon")
+    tg = dict(hk0=dict(rel="stylesheet"), lk0=dict(l_x="hk0__", l_y=dt), hk1=di)
+    return tg
 
 
 def main():
-    TemplateBuilder().build()
+    """Main function to demonstrate the TemplateBuilder functionality.
+
+    This function creates a TemplateBuilder instance, populates it with
+    common HTML elements, and builds the template.
+    """
+    TemplateBuilder().build(_populate_html())
+
+
+if __name__ == "__main__":
+    main()

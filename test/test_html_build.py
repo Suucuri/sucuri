@@ -21,20 +21,31 @@ Changelog
 import unittest
 import sys
 from unittest.mock import MagicMock
+
 sys.path.append('..')
 from alite.html_build import TemplateBuilder as Teb
+
 HTML = 'alite.html_build.TemplateBuilder.HTML'
 
 
 class MyBrock:
     def __init__(self, data):
         self.data = data
+        # self.div = self.img = self.anc = self.link
         self.k = self.link
-        self.d = self.link
+        self.d = self.div
+        self.i = self.img
+        self.a = self.anc
         self.Z = self.link
         self.H = self.head
         self.B = self.body
+        self.M = self.macro
         self.kwarg = {}
+
+    def macro(self, *args, **kwargs):
+        self.kwarg = dict(a=args, k=kwargs)
+        self.data.append([self.M, args, kwargs])
+        return self.M
 
     def body(self, *args, **kwargs):
         self.kwarg = kwargs
@@ -51,13 +62,24 @@ class MyBrock:
         self.data.append([self.k, args, kwargs])
         return self.k
 
+    def img(self, *args, **kwargs):
+        self.kwarg = kwargs
+        self.data.append([self.k, args, kwargs])
+        return self.i
+
+    def anc(self, *args, **kwargs):
+        return self.link(*args, **kwargs)
+
+    def div(self, *args, **kwargs):
+        return self.link(*args, **kwargs)
+
     def _repr__(self):
         return f'<MyBrock args={self.kwarg}>'
 
     # noinspection SpellCheckingInspection
     def _asdict(self):
         e = self.link
-        return dict(k=e, d=e, Z=e, H=self.head, B=self.body)
+        return dict(a=e, k=e, d=e, i=e, Z=e, H=self.head, B=self.body, M=self.macro)
 
 
 class TestHtmlBuild(unittest.TestCase):
@@ -124,6 +146,40 @@ class TestHtmlBuild(unittest.TestCase):
         self.html = self.tb.build(tgs)
         print("test_html_with_body", self.tb.names)
         self.assertIn(ti.B, self.html)
+
+    @unittest.mock.patch(HTML)
+    def test_html_with_macro(self, mock_ht):
+        ti = self._do_mock(mock_ht)
+        tgs = {}
+        # tgs = {"dH0": {f"hk{ix}": dict(rel="stylesheet", href=f"tg{ix}") for ix in range(2)}}
+        nav = {"nav": {f"hh{ix}": dict(alt=f"H{ix}H{ix}H{ix}") for ix in range(2)}}
+        tgs.update(**{"dM0": nav})
+        # tgs = [tgs, tgb]
+        self.html = self.tb.build(tgs)
+        print("test_html_with_macro", self.tb.names)
+        self.assertIn(ti.M, self.html)
+
+    @unittest.mock.patch(HTML)
+    def test_html_with_recur(self, mock_ht):
+        ti = self._do_mock(mock_ht)
+        tgs = {"dB0": {}}
+        # tgs = {"dH0": {f"hk{ix}": dict(rel="stylesheet", href=f"tg{ix}") for ix in range(2)}}
+        im = {"hi0": {"src": "/_media/suucurijuba.png", "alt": "LABASE", "width": "26", "height": "28"}}
+        item = dict(ha1={"__0": "hi0_dB0_", "Class": "navbar-item", "href": "/"})
+
+        brand = dict(hd0={"Class": "navbar-brand"})
+
+        nav = dict(hd1=dict(hd0=dict(__0="hd0_dB0_", Class="navbar-end"), Class="navbar-menu", id="navbarBasicExample"))
+        tgs["dB0"].update(**im)
+        tgs["dB0"].update(**item)
+        tgs["dB0"].update(**brand)
+        tgs["dB0"].update(**nav)
+        # tgs = [tgs, tgb]
+        self.html = self.tb.build(tgs)
+        print("test_html_with_recur", self.tb.names)
+        print("test_html_with_recur_m", self.tb.macros)
+        print("test_html_with_recur_d", self.dt)
+        self.assertIn(ti.M, self.html)
 
 
 if __name__ == '__main__':

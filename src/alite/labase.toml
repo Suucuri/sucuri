@@ -1,27 +1,56 @@
 #🏺 Spike Alite 25.08 main ⚝ ⭐Golden Penta (08/17)
 #Open Source program Alite Sucuri/sucuri - Copyright © 2025  Carlo Oliveira** <carlo@nce.ufrj.br>,
 #PDX-License-Identifier:** `GNU General Public License v3.0 or later <http://is.gd/3Udt>`_.
-#🚧 ⛲ 🛠️ Golden Penta ⭐ 25.08 (17)
-title = "Alite"
-menu = "#sobre Sobre|#participantes Equipe|#projetos Projetos|#publica Publicações|#contato Contato"
-prefix = "https://cdnjs.cloudflare.com/ajax/libs/"
-libs = "bulma/1.0.4/css/bulma.min.css font-awesome/7.0.0/css/all.min.css"
-[builder.nav]
-#lg = t.a(t.i(src="/_media/suucurijuba.png",alt="LABASE", width="26", height="28"), Class="navbar-item", href="/")
-#start = t.d(t.a("LABASE", Class="navbar-item", style="color: var(--coral);", href="/"), Class="navbar-start")
+#🚧 ⛲ 🛠️ Golden Penta ⭐ 25.08 (24)
+[dT0]
+__0 = "LABASE"
+[dH0]
+hk_0 = {rel="stylesheet"}
+[dH0.lk0]
+l_x="hk_0_dH0_"
+[[dH0.lk0.l_y]]
+href="/css/labase.css"
+[[dH0.lk0.l_y]]
+href="/css/bulma.min.css"
+[[dH0.lk0.l_y]]
+href="/css/all.min.css"
+[[dH0.lk0.l_y]]
+rel="shortcut icon"
+href="/_media/suucurijuba.png"
+type="image/x-icon"
 
+# menu = "#sobre Sobre|#participantes Equipe|#projetos Projetos|#publica Publicações|#contato Contato"
+[dB0]
+hk_0 = {rel="stylesheet"}
+hn0 = {Class="navbar is-fixed-top is-transparent", role="navigation", aria_label="main navigation"}
+hz0 = {__0={hd0 = { class = "container has-text-centered" }}, Class="hero"}
+[dB0.hn0.__0]
+hd2={Class="container"}
+#hd0 = {__0=["ha1_dB0_", "hd3_dB0_", "ha0_dB0_"], Class="navbar-brand"}
+[dB0.hn0.__0.hd2.__0] #Container
+hd0 = {Class="navbar-brand"}
+hd6 = {Class="navbar-menu", id="navbarBasicExample"}
+[dB0.hn0.__0.hd2.__0.hd0.__0]
+ha1 = {__0 = {hi1 = {src="/_media/suucurijuba.png",alt="LABASE", width="26", height="28"}}, Class="navbar-item", href="/"}
+hd3 = {__0 = {ha1={__0="LABASE", Class="navbar-item", style="color: var(--coral);", href="/"}}, Class="navbar-start"}
 ha0 = {aria_expanded="false", aria_label="menu", Class="navbar-burger", data_target="navbarBasicExample", role="button"}
-ha1 = {__hi0={__0="", src="/_media/suucurijuba.png",alt="LABASE", width="26", height="28"}, Class="navbar-item", href="/"}
-l_0 = {__0={__ha0="label", Class="navbar-item", href="ref"}, _b="label ref", _c="menu"}
-#hh0 = {__ha0={__0="LABASE", Class="navbar-item", style="color: var(--coral);"}, Class="title is-4"}
-hd1 = {__hd0={__0="_nav_hd0", Class="navbar-end"}, Class="navbar-menu", id="navbarBasicExample"}
-hd3 = {__ha1={__0="LABASE", Class="navbar-item", style="color: var(--coral);", href="/"}, Class="navbar-start"}
-hd0 = {__0=["_nav_ha1", "_nav_hd3", "_nav_ha0"], Class="navbar-brand"}
-#cont = t.d([brand, menu], Class="container")
-hd2 = {__0=["_nav_hd0", "menu"], Class="container"}
-#return t.n(cont, Class="navbar is-fixed-top", role="navigation", aria_label="main navigation")
-hn0__ = {__0="_nav_hd2", Class="navbar is-fixed-top", role="navigation", aria_label="main navigation"}
-
+[dB0.hn0.__0.hd2.__0.hd6.__0.hd5]
+Class="navbar-end"
+[dB0.hn0.__0.hd2.__0.hd6.__0.hd5.__0]
+ha4={__0="Sobre", Class="navbar-item", href="#sobre"}
+ha5={__0="Projetos", Class="navbar-item", href="#projetos"}
+ha6={__0="Equipe", Class="navbar-item", href="#equipe"}
+ha7={__0="Publicações", Class="navbar-item", href="#publica"}
+ha8={__0="Contato", Class="navbar-item", href="#contato"}
+[dB0.hz0.__0.hd0.__0]
+hd0 = {__0={hs0={__0="Inovação em Educação", Class="tag is-medium", style="background: rgba(178, 34, 34, 0.2); color: var(--coral); border: 1px solid var(--firebrick);"}},Class="mb-5"}
+hh1 = {__0="LABASE", Class = "title is-1 mb-4 glow-text", style = "color: var(--coral);"}
+hx1 = {__0="Laboratório de Automação de Sistemas Educacionais", Class = "subtitle is-4 mb-5", style = "color: var(--goldenrod);"}
+hp1 = {__0="Criando ferramentas computacionais para uma educação mais eficiente, <span class='highlight'>humanizada</span> e <span class='highlight'>adaptativa</span>", Class = "is-size-5 mb-6", style="max-width: 800px; margin: 0 auto;"}
+hd1 = {Class="buttons is-centered mt-5"}
+[dB0.hz0.__0.hd0.__0.hd1.__0]
+ha0={__0="Nossos Projetos",Class="btn", href="#projetos"}
+ha1={__0="Entre em Contato",Class="btn btn-outline", href="#contato"}
 [sobre.card__0]
 title = "Formação"
 caption = """

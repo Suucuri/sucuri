@@ -47,15 +47,26 @@ class TemplateBuilder:
     >>> template_data = {"h1_0": {"text": "Hello World"}}
     >>> elements = builder.build(template_data)
     """
+    MACRO = {}
 
     @staticmethod
     def head(*kwargs):
         # print("head(*kwargs)", kwargs)
         return [doc.head <= ents for ents in kwargs]
 
-    HTML = namedtuple('HTML', "n d h a z s p x r u l y i k m H B")(
+    @staticmethod
+    def body(*kwargs):
+        # print("head(*kwargs)", kwargs)
+        return [doc.body <= ents for ents in kwargs]
+
+    @staticmethod
+    def macro(*kwargs):
+        # print("head(*kwargs)", kwargs)
+        return [TemplateBuilder.MACRO.update(**kw) for kw in kwargs]
+
+    HTML = namedtuple('HTML', "n d h a z s p x r u l y i k m H B M")(
         n=ht.NAV, d=ht.DIV, h=ht.H1, a=ht.A, z=ht.SECTION, s=ht.SPAN, p=ht.P, x=ht.H2, r=ht.HR, u=ht.UL,
-        l=ht.LI, y=ht.H4, i=ht.IMG, k=ht.LINK, m=ht.META, H=head, B=ht.BODY)
+        l=ht.LI, y=ht.H4, i=ht.IMG, k=ht.LINK, m=ht.META, H=head, B=body, M=body)
 
     def __init__(self):
         """Initialize the TemplateBuilder with HTML element references and an empty names, macros dictionary."""
@@ -94,11 +105,12 @@ class TemplateBuilder:
                 case 'h' | 'd':
                     if tg[1] not in tags:
                         return [kw]
-                    elif tg[1] in "HB":
+                    elif tg[1] in "HBM":
                         _parse = [_tg for tag, arg in kw.items() if tag[2] not in "_" for _tg in do_parse(tag, **arg)]
                         _tags = tags[tg[1]](*_parse)
                         return [_tags]
-                    coded = tags[tg[1]](**kw) if tg[1] in tags else NO_E.format(tg + str(kw))
+                    arg = kw.pop("__0", False)
+                    coded = tags[tg[1]](arg, **kw) if arg else tags[tg[1]](**kw)
                     self.macros[tg] = coded if coded else NO_E.format(tg + str(kw))
                     return [coded]
                 case 'l':
@@ -206,7 +218,7 @@ def _populate_html():
     dt = [dict(href=lb) for lb in libs]
     di = dict(rel="shortcut icon", href="/_media/suucurijuba.png", type="image/x-icon")
     tg = dict(hk_0=dict(rel="stylesheet"), lk0=dict(l_x="hk_0_dH0_", l_y=dt), hk1=di)
-    tg = dict(dH0=tg)
+    tg = dict(dH0=tg, dB0=dict(hh0=dict(__0="HALO", alt="HALO")))
     return tg
 
 

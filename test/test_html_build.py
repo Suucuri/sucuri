@@ -33,7 +33,13 @@ class MyBrock:
         self.d = self.link
         self.Z = self.link
         self.H = self.head
+        self.B = self.body
         self.kwarg = {}
+
+    def body(self, *args, **kwargs):
+        self.kwarg = kwargs
+        self.data.append([self.B, args, kwargs])
+        return self.B
 
     def head(self, *args, **kwargs):
         self.kwarg = kwargs
@@ -51,7 +57,7 @@ class MyBrock:
     # noinspection SpellCheckingInspection
     def _asdict(self):
         e = self.link
-        return dict(k=e, d=e, Z=e, H=self.head)
+        return dict(k=e, d=e, Z=e, H=self.head, B=self.body)
 
 
 class TestHtmlBuild(unittest.TestCase):
@@ -108,6 +114,16 @@ class TestHtmlBuild(unittest.TestCase):
         self.assertEqual(3, len(self.dt), self.dt)
         self.assertEqual(1, len(self.html), self.html)
         self.assertIn(ti.H, self.html)
+
+    @unittest.mock.patch(HTML)
+    def test_html_with_body(self, mock_ht):
+        ti = self._do_mock(mock_ht)
+        tgs = {"dH0": {f"hk{ix}": dict(rel="stylesheet", href=f"tg{ix}") for ix in range(2)}}
+        tgs.update({"dB0": {f"hh{ix}": dict(alt=f"H{ix}H{ix}H{ix}") for ix in range(2)}})
+        # tgs = [tgs, tgb]
+        self.html = self.tb.build(tgs)
+        print("test_html_with_body", self.tb.names)
+        self.assertIn(ti.B, self.html)
 
 
 if __name__ == '__main__':

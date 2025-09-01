@@ -83,6 +83,94 @@ class TemplateBuilder:
         self.fix = False
         tb = self
 
+        class WebElement:
+            def __init__(self, tg):
+                def warned(t, k, y):
+                    return NO_E.format(f"@@ {tb.MACRO} t:{t}, k:{y}, {k}, IS no macro @@")
+
+                def make_(tg_, **kw):
+                    xkw = kw.copy()
+                    tb.MACRO[f"m-{tg_[1:-1]}"] = tb.macro(**kw or dict(Class="navbar-item"))
+                    # self.MACRO[f"m-{tg_[1:-1]}"] = self.macro(d, **kw or dict(Class="navbar-item"))
+                    _m = tb.MACRO[f"m-{tg_[1:-1]}"]
+                    print(f"@@->case 'n', {tg_}, kw, {xkw},tag {_m.tag},dom_node {_m.dom_node} a: {_m.arguments}")
+                    return [NO_E.format(f"define macro m-{tg_[1:-1]}")]
+
+                def listing(kw, *_):
+                    print(f"@@->listing , kw, {kw},tag")
+                    tb.MACRO["m-c"].go(kw["l_y"]) if "l_y" in kw else NO_E.format(" is no lc")
+                    return [NO_E.format(f"{tg, kw} is no lc")]
+
+                self.tg = self.fix = tg
+                m = f"m-{tg[1:-1]}"
+                warn = NO_E.format(f"@@ {tb.MACRO} IS no macro @@")
+
+                self.kind = dict(
+                    h=self.html_tag, d=self.html_tag,
+                    e=lambda tg_, **kw: [warned(tg_, kw, "e")],
+                    m=lambda tg_, m_=m, **kw: [tb.MACRO[m_].go(**kw) if m_ in tb.MACRO else warned(tg_, kw, "m "+m_)],
+                    x=make_,
+                    n=lambda tg_, m_=m, **kw: [tb.MACRO.update({m_: tb.macro(**kw)})] or warned(tg_, kw, "n"),
+                    l=listing,
+                    w=lambda tg_, kw: [tb.MACRO["m-c"].go(kw["l_y"]) if "l_y" in kw else warned(tg_, kw, "l")],
+                )
+
+            def parse(self, tg, **kwargs):
+                # tg = self.tg
+                print("parse", tg, self.kind.get(tg[0], self.kind["e"]), **kwargs)  # if "m" in tg else None
+                if (not isinstance(tg, str)) or (len(tg) < 3):
+                    return [NO_E.format(tg + "beginner")]
+                return self.kind.get(tg[0], self.kind["e"])(tg, **kwargs)
+
+            def process_macro(self, macro):
+                """Process a macro definition."""
+                arg = macro.pop("__0", False) if isinstance(macro, dict) else macro
+                # arg = macro.get("__0", False)
+                match str(type(arg)):
+                    case "<class 'bool'>":
+                        return False
+                    case "<class 'str'>":
+                        return tb.macros.get(arg, arg)
+                    case "---<class 'list'>":
+                        return [NO_E.format(str(arg) + " is no list")]  # [self.macro_with_list("x", **macro)]
+                    case "<class 'dict'>" | "<class 'tomlib.DynamicInlineTableDict'>" | "<class 'list'>":
+                        return [self.parse(k, **v) for k, v in arg.items()]
+                    case _:
+                        print("process_macro", arg, type(arg))
+                        return [NO_E.format(str(arg) + " is no macro")]
+
+            def html_tag(self, tg, **kw):
+                tags = tb.t._asdict()
+
+                h_t = self.html_tag
+                if tg[1] not in tags:
+
+                    print("@@@ - html_tag", tg, kw)
+                    return self.parse(tg, **kw)
+                    # return [kw]
+                elif tg[1] in "HBM":
+                    def go_parse(tg_, kw_):
+                        return h_t(tg_, **kw_) if isinstance(kw_, dict) else h_t(tg_, **dict(__0=kw_))
+
+                    self.fix = tg
+                    _parse = [_tg for tag, arg in kw.items()
+                              if (tag[2] not in "_") and (isinstance(arg, dict) or isinstance(arg, list))
+                              for _tg in go_parse(tag, arg)]
+                    coded = tags[tg[1]](*_parse)
+                    tb.macros[f"{tg}_{self.fix}_" if self.fix else tg] = coded if coded else NO_E.format(
+                        tg + str(kw) + " is no coded")
+                    return [coded]
+                arg = self.process_macro(kw)
+                try:
+                    coded = tags[tg[1]](**kw) if (arg is False) or isinstance(arg, bool) else tags[tg[1]](arg, **kw)
+                except Exception as mx:
+                    print(mx, tg, kw, arg)
+                    coded = NO_E.format(tg + str(kw) + " is empty coded")  # tags[tg[1]](**kw)
+                    coded = self.process_macro({tg: kw})  # tags[tg[1]](**kw)
+                msg = NO_E.format(tg + str(kw) + " is empty coded")
+                tb.macros[f"{tg}_{self.fix}_" if self.fix else tg] = coded if coded else msg
+                return [coded]
+
         class MacroGen:
             def __init__(self, _0=False, _node_=None, _tag_="a", _arg_=False, _is_list_=False, **kwargs):
                 self._sub_args, kwargs = [k[2:] for k in kwargs.values() if k.startswith("__")], {
@@ -112,6 +200,7 @@ class TemplateBuilder:
                 return [self.cmd_go(elt.pop("__0", False), **elt) for elt in y]
 
         self.macro = MacroGen
+        self.web = WebElement
 
         class WebList:
             def __init__(self, dom_node=None, macro_node=None):
@@ -168,12 +257,12 @@ class TemplateBuilder:
                 case "---<class 'list'>":
                     return [NO_E.format(str(arg) + " is no list")]  # [self.macro_with_list("x", **macro)]
                 case "<class 'dict'>" | "<class 'tomlib.DynamicInlineTableDict'>" | "<class 'list'>":
-                    return [do_parse(k, **v) for k, v in arg.items()]
+                    return [_do_parse(k, **v) for k, v in arg.items()]
                 case _:
                     print("process_macro", arg, type(arg))
                     return [NO_E.format(str(arg) + " is no macro")]
 
-        def do_parse(tg, **kw):
+        def _do_parse(tg, **kw):
             print(tg, **kw) if "m" in tg else None
             if (not isinstance(tg, str)) or (len(tg) < 3):
                 return [NO_E.format(tg + "begin")]
@@ -198,7 +287,7 @@ class TemplateBuilder:
                         return [kw]
                     elif tg[1] in "HBM":
                         def go_parse(tg_, kw_):
-                            return do_parse(tg_, **kw_) if isinstance(kw_, dict) else do_parse(tg_, **dict(__0=kw_))
+                            return _do_parse(tg_, **kw_) if isinstance(kw_, dict) else _do_parse(tg_, **dict(__0=kw_))
                         self.fix = tg
                         _parse = [_tg for tag, arg in kw.items()
                                   if (tag[2] not in "_") and (isinstance(arg, dict) or isinstance(arg, list))
@@ -215,7 +304,7 @@ class TemplateBuilder:
                         coded = tags[tg[1]](**kw) if (arg is False) or isinstance(arg, bool) else tags[tg[1]](arg, **kw)
                     except Exception as mx:
                         print(mx)
-                        coded = tags[tg[1]](**kw)
+                        coded = False  # tags[tg[1]](**kw)
                     msg = NO_E.format(tg + str(kw) + " is empty coded")
                     self.macros[f"{tg}_{self.fix}_" if self.fix else tg] = coded if coded else msg
                     return [coded]
@@ -231,56 +320,10 @@ class TemplateBuilder:
         # print("data", data)
         # [print("t:", type(kw), kw, end=",") for t, grp in data.items() for tag, kw in grp.items() if "m" in tag]
 
-        code = [entity for tag, kw in data.items() for entity in do_parse(tag, **kw if isinstance(kw, dict)
-                else [])]
+        code = [entity for tag, kw in data.items() for entity in self.web(tag).parse(tag, **kw)]
+        # code = [entity for tag, kw in data.items() for entity in _do_parse(tag, **kw)]
         # print("code", code)
         return code
-
-    def get_names(self, td):
-        """Retrieve a named element from the internal registry.
-
-        Parameters
-        ----------
-        td : str
-            The identifier of the element to retrieve.
-
-        Returns
-        -------
-        object
-            The element if found, or the original identifier if not found.
-        """
-        return td if td not in self.names else self.names.get(td, [])
-
-    def list_comprehension(self, l_x, l_y):
-        """Generate a list of elements based on template data.
-
-        This method implements a list comprehension-like functionality for
-        generating multiple similar elements with different data.
-
-        Parameters
-        ----------
-        l_x : str
-            The template identifier to use for each element.
-        l_y : list
-            A list of dictionaries containing data for each element.
-
-        Returns
-        -------
-        list
-            A list of generated HTML elements.
-        """
-        nm = dict(self.names.get(l_x, []))
-
-        # nm = {l_x: 0} if not isinstance(n := self.get_names(l_x), type) else n
-
-        def do_expression(data):
-            nm.update(**data)
-            nmc = {l_x: nm}
-            # print("do_expression", nm, "nmc", nmc, "data", data)
-            return self.parse_template(nmc)[-1]
-
-        # print("list_comprehension", l_x, "data", l_y, type(self.get_names(l_x)), "nm", nm)
-        return [do_expression(data) for data in l_y]
 
     def build(self, data: dict = None):
         """Build and render the complete HTML template.
@@ -338,14 +381,16 @@ def _populate_html():
     with open("alite/labase.toml", "rb") as f:
         xt = """
 [dM0]
-ni0 = {_tag_="i", width="26", height="28"}
-nb0 = {_0="m-i", src="__src", alt="__alt", _tag_="a", Class="navbar-item"}
-nm0 = {_tag_="a", _arg_=true, _is_list_=true, Class="navbar-item"}
-mm0 = [{__0="Sobre", href="#sobre"}, {__0="Projetos", href="#projetos"}]
-nmm0 = {_tag_="a", _arg_=true, _is_list_=false, Class="navbar-item"}
+nwi0 = {_tag_="i", width="26", height="28"}
+nwb0 = {_0="m-wi", src="__src", alt="__alt", _tag_="a", Class="navbar-item"}
+nwm0 = {_tag_="a", _arg_=true, _is_list_=true, Class="navbar-item"}
+mwm0 = [{__0="Sobre", href="#sobre"}, {__0="Projetos", href="#projetos"}]
+nwmm0 = {_tag_="a", _arg_=true, _is_list_=false, Class="navbar-item"}
 # mmm0 = {__0="Equipe", href="#Equipe"}
-dB0.hd9 = {__0={mmm0 = {__0="Equipe", href="#Equipe"}}, alt="HALO"}
-dB0.hd8 = {__0={mb0 = {src="/_media/suucurijuba.png", alt="labase", href="#root"}}}
+dB0.hd9 = {__0={mwmm0 = {__0="Equipe", href="#Equipe"}}, alt="HALO"}
+dB0.hd8 = {__0={mwb0 = {src="/_media/suucurijuba.png", alt="labase", href="#root"}}}
+dH0.hkl0 = {rel="stylesheet", href="/css/bulma.min.css"}
+dH0.hkl1 = {rel="stylesheet", href="/css/labase.css"}
 
         """
         cf = loads(f.read().decode("utf-8") + xt)

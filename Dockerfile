@@ -19,5 +19,5 @@ EXPOSE 8665
 
 WORKDIR /var/www/suucuri
 #ENTRYPOINT ["top", "-b"]
-ENTRYPOINT ["python3", "wsgi.py", "--port=8665", "--debug=True"]
+ENTRYPOINT ["python3", "wsgi.py", "--port=8775", "--debug=True"]
 #CMD ["python3", "wsgi.py", "--port=8575", "--debug=True"]

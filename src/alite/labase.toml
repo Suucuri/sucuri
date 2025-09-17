@@ -1,7 +1,7 @@
 #🏺 Spike Alite 25.08 main ⚝ ⭐Golden Penta (08/17)
 #Open Source program Alite Sucuri/sucuri - Copyright © 2025  Carlo Oliveira** <carlo@nce.ufrj.br>,
 #PDX-License-Identifier:** `GNU General Public License v3.0 or later <http://is.gd/3Udt>`_.
-#🚧 ⛲ 🛠️ Golden Penta ⭐ 25.08 (24)
+#🚧 ⛲ 🛠️ Golden Penta ⭐ 25.09 (17)
 [dT0]
 __0 = "LABASE"
 [dH0]
@@ -31,7 +31,7 @@ hd2={Class="container"}
 hd0 = {Class="navbar-brand"}
 hd6 = {Class="navbar-menu", id="navbarBasicExample"}
 [dB0.hn0.__0.hd2.__0.hd0.__0]
-ha1 = {__0 = {hi1 = {src="/_media/suucurijuba.png",alt="LABASE", width="26", height="28"}}, Class="navbar-item", href="/"}
+ha1 = {__0 = {hi1 = {src="/_media/labase.png",alt="LABASE", width="26", height="28"}}, Class="navbar-item", href="/"}
 hd3 = {__0 = {ha1={__0="LABASE", Class="navbar-item", style="color: var(--coral);", href="/"}}, Class="navbar-start"}
 ha0 = {aria_expanded="false", aria_label="menu", Class="navbar-burger", data_target="navbarBasicExample", role="button"}
 [dB0.hn0.__0.hd2.__0.hd6.__0.hd5]

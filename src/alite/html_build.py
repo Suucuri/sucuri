@@ -103,7 +103,7 @@ class TemplateBuilder:
 
                 self.tg = self.fix = tg
                 m = f"m-{tg[1:-1]}"
-                warn = NO_E.format(f"@@ {tb.MACRO} IS no macro @@")
+                _ = NO_E.format(f"@@ {tb.MACRO} IS no macro @@")
 
                 self.kind = dict(
                     h=self.html_tag, d=self.html_tag,
@@ -165,7 +165,7 @@ class TemplateBuilder:
                     coded = tags[tg[1]](**kw) if (arg is False) or isinstance(arg, bool) else tags[tg[1]](arg, **kw)
                 except Exception as mx:
                     print(mx, tg, kw, arg)
-                    coded = NO_E.format(tg + str(kw) + " is empty coded")  # tags[tg[1]](**kw)
+                    _ = NO_E.format(tg + str(kw) + " is empty coded")  # tags[tg[1]](**kw)
                     coded = self.process_macro({tg: kw})  # tags[tg[1]](**kw)
                 msg = NO_E.format(tg + str(kw) + " is empty coded")
                 tb.macros[f"{tg}_{self.fix}_" if self.fix else tg] = coded if coded else msg
@@ -372,11 +372,11 @@ def _populate_html():
     dict
         A dictionary containing template specifications for head elements.
     """
-    libs = "bulma/1.0.4/css/bulma.min.css font-awesome/7.0.0/css/all.min.css /css/labase.css".split()
-    dt = [dict(href=lb) for lb in libs]
-    di = dict(rel="shortcut icon", href="/_media/suucurijuba.png", type="image/x-icon")
-    tg = dict(hk_0=dict(rel="stylesheet"), lk0=dict(l_x="hk_0_dH0_", l_y=dt), hk1=di)
-    _ = dict(dH0=tg, dT0={"__0": "LABASE"}, dB0=dict(hh0=dict(__0="HALO", alt="HALO")))
+    # libs = "bulma/1.0.4/css/bulma.min.css font-awesome/7.0.0/css/all.min.css /css/labase.css".split()
+    # dt = [dict(href=lb) for lb in libs]
+    # di = dict(rel="shortcut icon", href="/_media/suucurijuba.png", type="image/x-icon")
+    # tg = dict(hk_0=dict(rel="stylesheet"), lk0=dict(l_x="hk_0_dH0_", l_y=dt), hk1=di)
+    # _ = dict(dH0=tg, dT0={"__0": "LABASE"}, dB0=dict(hh0=dict(__0="HALO", alt="HALO")))
     from tomlib import loads
     with open("alite/labase.toml", "rb") as f:
         xt = """
@@ -387,7 +387,7 @@ nwm0 = {_tag_="a", _arg_=true, _is_list_=true, Class="navbar-item"}
 mwm0 = [{__0="Sobre", href="#sobre"}, {__0="Projetos", href="#projetos"}]
 nwmm0 = {_tag_="a", _arg_=true, _is_list_=false, Class="navbar-item"}
 # mmm0 = {__0="Equipe", href="#Equipe"}
-dB0.hd9 = {__0={mwmm0 = {__0="Equipe", href="#Equipe"}}, alt="HALO"}
+# dB0.hd9 = {__0={mwmm0 = {__0="Equipe", href="#Equipe"}}, alt="HALO"}
 dB0.hd8 = {__0={mwb0 = {src="/_media/suucurijuba.png", alt="labase", href="#root"}}}
 dH0.hkl0 = {rel="stylesheet", href="/css/bulma.min.css"}
 dH0.hkl1 = {rel="stylesheet", href="/css/labase.css"}

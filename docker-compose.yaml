@@ -6,10 +6,12 @@ services:
     command: python3 -m wsgi --port=8665
     restart: always
     environment:
-      - VIRTUAL_HOST=afetora.ydns.eu
-      - VIRTUAL_PORT=8665
+      - VIRTUAL_HOST=labase.nce.ufrj.br
+      - VIRTUAL_PORT=8775
+      - LETSENCRYPT_HOST=labase.nce.ufrj.br
+      - LETSENCRYPT_EMAIL=carlo@nce.ufrj.br
     ports:
-      - "8665:8665"
+      - "8775:8775"
 networks:
   existing-network:
     name: dockernet
